@@ -31,7 +31,7 @@ One entry per discrete unit of work. Multiple sources can confirm the same contr
   "category": "shipped | in_progress | collaborated | incident | planned",
   "title": "string",
   "description": "string",
-  "url": "string | null",
+  "url": "string",
   "metadata": {}
 }
 ```
@@ -227,7 +227,8 @@ Notable, substantive, or quotable things written during the day. Good candidates
   "date": "YYYY-MM-DD",
   "source": "slack | notion | github | linear",
   "context": "string",
-  "content": "string"
+  "content": "string",
+  "url": "string"
 }
 ```
 
@@ -251,7 +252,8 @@ Exclude:
   "date": "2026-05-14",
   "source": "slack",
   "context": "#engineering — thread on promo engine architecture",
-  "content": "The real issue with polling here isn't the latency — it's that we're burning Slack API quota on read calls that return nothing 90% of the time. Switching to webhooks drops our API calls by ~10x and gives us sub-second delivery. The tradeoff is we need to handle webhook retries, but that's a solved problem with our existing retry queue."
+  "content": "The real issue with polling here isn't the latency — it's that we're burning Slack API quota on read calls that return nothing 90% of the time. Switching to webhooks drops our API calls by ~10x and gives us sub-second delivery. The tradeoff is we need to handle webhook retries, but that's a solved problem with our existing retry queue.",
+  "url": "https://volleygames.slack.com/archives/C.../p..."
 }
 ```
 
@@ -290,7 +292,7 @@ Exclude:
       "category": "collaborated",
       "title": "1:1 with Alex",
       "description": "Weekly 1:1. Discussed Q2 roadmap priorities.",
-      "url": null,
+      "url": "https://calendar.google.com/calendar/event?eid=...",
       "metadata": {
         "start": "2026-05-14T16:00:00",
         "end": "2026-05-14T16:30:00",
@@ -312,7 +314,8 @@ Exclude:
       "date": "2026-05-14",
       "source": "slack",
       "context": "#engineering — thread on promo engine architecture",
-      "content": "The real issue with polling here isn't the latency — it's that we're burning Slack API quota on read calls that return nothing 90% of the time. Switching to webhooks drops our API calls by ~10x and gives us sub-second delivery."
+      "content": "The real issue with polling here isn't the latency — it's that we're burning Slack API quota on read calls that return nothing 90% of the time. Switching to webhooks drops our API calls by ~10x and gives us sub-second delivery.",
+      "url": "https://volleygames.slack.com/archives/C.../p..."
     }
   ]
 }

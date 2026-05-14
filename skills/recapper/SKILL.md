@@ -89,6 +89,8 @@ curl -s "https://slack.com/api/search.messages" \
   | jq '.messages.matches[] | {text, channel: .channel.name, ts}'
 ```
 
+For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
+
 **Structured output per message:**
 ```json
 {
@@ -97,7 +99,8 @@ curl -s "https://slack.com/api/search.messages" \
   "channel": "#channel-name",
   "text": "...",
   "timestamp": "2026-05-14T10:32:00Z",
-  "thread_id": "optional"
+  "thread_id": "optional",
+  "url": "https://volleygames.slack.com/archives/C.../p..."
 }
 ```
 
@@ -221,18 +224,20 @@ curl -s "https://api.datadoghq.com/api/v2/incidents?filter[created][start]=${TAR
 
 **Parse audit events by `type`:**
 
-| Audit type | Contribution type |
-|---|---|
-| `dashboard_created` | `dashboard_created` |
-| `dashboard_modified` | `dashboard_edited` |
-| `monitor_created` | `monitor_created` |
-| `monitor_modified` | `monitor_edited` |
-| `notebook_created` | `notebook_created` |
-| `notebook_modified` | `notebook_edited` |
+| Audit type | Contribution type | URL pattern |
+|---|---|---|
+| `dashboard_created` | `dashboard_created` | `https://app.datadoghq.com/dashboard/{id}` |
+| `dashboard_modified` | `dashboard_edited` | `https://app.datadoghq.com/dashboard/{id}` |
+| `monitor_created` | `monitor_created` | `https://app.datadoghq.com/monitors/{id}` |
+| `monitor_modified` | `monitor_edited` | `https://app.datadoghq.com/monitors/{id}` |
+| `notebook_created` | `notebook_created` | `https://app.datadoghq.com/notebook/{id}` |
+| `notebook_modified` | `notebook_edited` | `https://app.datadoghq.com/notebook/{id}` |
+
+Extract the resource `id` from `attributes.resource.id` in each audit event and construct the URL using the pattern above. Always populate `url`; never leave it null.
 
 Filter audit events to only those where the `userId` or `userEmail` matches the current user.
 
-**For incidents**, check `attributes.created` and `attributes.resolved` timestamps against TARGET_DATE.
+**For incidents**, check `attributes.created` and `attributes.resolved` timestamps against TARGET_DATE. Incidents link to `https://app.datadoghq.com/incidents/{id}`.
 
 ---
 
@@ -256,7 +261,7 @@ Fetch all events for the target date:
 | `team_meeting` | 3+ attendees, doesn't match above |
 | `focus_time` | Blocked time, 0 attendees, title: `focus`, `deep work`, `blocked` |
 
-For each event, record: title, start time, duration (minutes), attendee count, classification, whether the user declined (`responseStatus === "declined"` → `attended: false`).
+For each event, record: title, start time, duration (minutes), attendee count, classification, whether the user declined (`responseStatus === "declined"` → `attended: false`), and the `htmlLink` field from the event as `url`. Always populate `url`; never leave it null.
 
 ---
 
