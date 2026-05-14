@@ -136,7 +136,12 @@ If the user skips Datadog entirely, mark it as `unavailable` and continue.
 
 ### 1d. Announce
 
-> "Collecting activity for **{TARGET_DATE}**. Fetching from Slack, Linear, GitHub, Notion, Datadog, and Google Calendar..."
+Build the source list from only the sources not already marked `unavailable` after steps 1b and 1c. Then announce:
+
+> "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
+
+For example, if GitHub and Datadog were skipped:
+> "Collecting activity for **2026-05-14**. Fetching from Slack, Linear, Notion, and Google Calendar..."
 
 ---
 
