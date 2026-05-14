@@ -247,7 +247,7 @@ After collecting both values, offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again? (Yes / No)"
 
-If values provided, escape single quotes with `escape_sq` (defined in 1d) and append to shell profile using the same pattern as 1d. Mark Slack as available with the provided credentials.
+If values provided, escape single quotes with `escape_sq` (defined in 1d) and escape single quotes with `escape_sq` (defined in 1d) and append to shell profile using the same pattern as 1d. Mark Slack as available with the provided credentials.
 
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
