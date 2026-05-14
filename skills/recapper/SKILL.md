@@ -197,7 +197,7 @@ curl -s "https://slack.com/api/search.messages" \
 >
 > Paste your Slack Bot Token here:"
 
-[Wait for user input.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue.]
 
 After collecting both values, offer to save them:
 
