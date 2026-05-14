@@ -223,7 +223,7 @@ curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $LINEAR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "{ viewer { assignedIssues(filter: { updatedAt: { gt: \"\"$TARGET_DATE\"T00:00:00.000Z\" } }) { nodes { id identifier title state { name } updatedAt url priority } } } }"
+    "query": "{ viewer { assignedIssues(filter: { updatedAt: { gt: \"'"$TARGET_DATE"'T00:00:00.000Z\" } }) { nodes { id identifier title state { name } updatedAt url priority } } } }"
   }' | jq '.data.viewer.assignedIssues.nodes[]'
 ```
 
