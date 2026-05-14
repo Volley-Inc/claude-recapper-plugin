@@ -173,20 +173,30 @@ curl -s "https://slack.com/api/search.messages" \
 > You can fix this two ways:
 >
 > **Option A — Authenticate the Slack MCP** (recommended):
-> Open Claude Code settings and authenticate the Slack integration.
+> Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
 >
-> **Option B — Set up the REST fallback**:
-> You'll need two values:
+> **Option B — Set up the REST fallback** (or press Enter at any prompt to skip Slack):
 >
-> **SLACK_USER_ID** — your personal Slack user ID:
+> **Step 1 — SLACK_USER_ID** — your personal Slack user ID:
 > 1. Open Slack and click your profile picture (top right)
 > 2. Click **Profile**
 > 3. Click the **•••** menu → **Copy member ID**
 > It looks like `U012AB3CD`.
 >
-> **SLACK_BOT_TOKEN** — a Slack bot token with `search:read` scope. Ask your Slack workspace admin to create one, or create a Slack app at api.slack.com/apps.
+> Paste your Slack User ID here (or press Enter to skip Slack):"
+
+[Wait for user input. If empty, mark Slack as `unavailable` and continue.]
+
+> "**Step 2 — SLACK_BOT_TOKEN** — a Slack bot token with `search:read` scope:
+> Ask your Slack workspace admin to create one, or create a Slack app at api.slack.com/apps with the `search:read` scope and copy the Bot User OAuth Token.
 >
-> Want me to save these to your shell profile once you have them? (Yes / No / Skip Slack)"
+> Paste your Slack Bot Token here:"
+
+[Wait for user input.]
+
+After collecting both values, offer to save them:
+
+> "Save these to your shell profile so you don't have to enter them again? (Yes / No)"
 
 If the user provides values, append to shell profile using the same pattern as 1c. If they choose Skip, mark Slack as `unavailable` and continue.
 
