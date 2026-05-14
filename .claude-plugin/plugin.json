@@ -1,0 +1,17 @@
+{
+  "name": "recapper",
+  "description": "Collects daily work activity from Slack, Linear, GitHub, Notion, Datadog, and Google Calendar. Outputs a conversational journal summary and structured JSON for import into an Impact Archive app.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jaimie Diemer"
+  },
+  "keywords": [
+    "daily-recap",
+    "impact-archive",
+    "journal",
+    "activity",
+    "productivity",
+    "recap"
+  ],
+  "skills": "./skills/"
+}
