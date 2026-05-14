@@ -59,50 +59,86 @@ Phase 4: Output         → Write conversational summary + structured JSON
 TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 ```
 
-### 1b. Check GitHub CLI
+### 1b. Load ignored-sources config
+
+```bash
+RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
+mkdir -p "${HOME}/.config/recapper"
+[ ! -f "$RECAPPER_CONFIG" ] && echo '{"ignoredSources":[]}' > "$RECAPPER_CONFIG"
+```
+
+To check whether a source is ignored:
+```bash
+jq -e --arg src "source-name" '.ignoredSources | index($src) != null' "$RECAPPER_CONFIG" 2>/dev/null
+```
+
+To add a source to the ignored list:
+```bash
+jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > /tmp/rc-tmp.json && mv /tmp/rc-tmp.json "$RECAPPER_CONFIG"
+```
+
+### 1c. Check GitHub CLI
 
 ```bash
 gh auth status 2>/dev/null
 ```
 
-If the command fails or reports "not logged in", tell the user:
+If the command fails or reports "not logged in":
+- Check if `"github"` is in `ignoredSources`. If yes, silently mark GitHub as `unavailable` and continue.
+- If not ignored, show:
 
-> "GitHub CLI isn't authenticated — GitHub activity won't be included.
+> "⚠️ GitHub CLI isn't authenticated — GitHub activity won't be included.
 >
-> To fix this, run the following in your terminal and follow the prompts, then re-run `/recapper`:
+> What would you like to do?
+> **a) Ignore forever** — don't remind me about GitHub again
+> **b) Ignore this time** — skip GitHub now, remind me next run
+> **c) Fix it** — I'll walk you through logging in"
+
+If **a)**: add `"github"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **b)**: mark as `unavailable`, continue.
+If **c)**: tell the user:
+> "Run this in your terminal and follow the prompts, then re-run `/recapper`:
 > ```
 > gh auth login
 > ```"
+Mark as `unavailable` and stop — the user needs to re-run after authenticating.
 
-Mark GitHub as `unavailable` and skip it in Phase 2.
-
-### 1c. Check Datadog keys
+### 1d. Check Datadog keys
 
 ```bash
 echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}"
 ```
 
-If either key is missing, tell the user:
+If either key is missing:
+- Check if `"datadog"` is in `ignoredSources`. If yes, silently mark Datadog as `unavailable` and continue.
+- If not ignored, show:
 
-> "Datadog isn't configured — dashboards, monitors, and incidents won't be included.
+> "⚠️ Datadog isn't configured — dashboards, monitors, and incidents won't be included.
 >
-> To set it up, you'll need two keys from Datadog:"
+> What would you like to do?
+> **a) Ignore forever** — don't remind me about Datadog again
+> **b) Ignore this time** — skip Datadog now, remind me next run
+> **c) Fix it** — I'll walk you through getting your API keys"
 
-Then prompt for each key in turn:
+If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **b)**: mark as `unavailable`, continue.
+If **c)**: prompt for each key in turn:
 
-**API Key:**
 > "**Step 1 — Datadog API Key**
 > 1. Go to **Datadog → Organization Settings → API Keys** (or ask your admin)
 > 2. Click **New Key**, give it a name, and copy the value
 >
 > Paste your Datadog API Key here (or press Enter to skip Datadog):"
 
-**Application Key** (only if API Key was provided):
+[Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
+
 > "**Step 2 — Datadog Application Key**
 > 1. Go to **Datadog → Organization Settings → Application Keys**
 > 2. Click **New Key**, give it a name, and copy the value
 >
-> Paste your Datadog Application Key here:"
+> Paste your Datadog Application Key here (or press Enter to skip Datadog):"
+
+[Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
 After collecting both values, offer to save them:
 
@@ -113,7 +149,6 @@ After collecting both values, offer to save them:
 If **Yes**, detect the user's shell profile and append:
 
 ```bash
-# Detect shell profile
 if [ -n "$ZSH_VERSION" ] || [ "$SHELL" = "/bin/zsh" ]; then
   SHELL_PROFILE="$HOME/.zshrc"
 elif [ -f "$HOME/.bashrc" ]; then
@@ -123,8 +158,8 @@ else
 fi
 
 printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
-printf 'export DATADOG_API_KEY='"'"'%s'"'"'\n' "$DATADOG_API_KEY" >> "$SHELL_PROFILE"
-printf 'export DATADOG_APP_KEY='"'"'%s'"'"'\n' "$DATADOG_APP_KEY" >> "$SHELL_PROFILE"
+printf 'export DATADOG_API_KEY='"'"\'''%s'"'"\'''\n' "$DATADOG_API_KEY" >> "$SHELL_PROFILE"
+printf 'export DATADOG_APP_KEY='"'"\'''%s'"'"\'''\n' "$DATADOG_APP_KEY" >> "$SHELL_PROFILE"
 ```
 
 Then tell the user:
@@ -132,11 +167,9 @@ Then tell the user:
 
 If **No**, export the values for the current session so Phase 2 can use them.
 
-If the user skips Datadog entirely, mark it as `unavailable` and continue.
+### 1e. Announce
 
-### 1d. Announce
-
-Build the source list from only the sources not already marked `unavailable` after steps 1b and 1c. Then announce:
+Build the source list from only the sources not already marked `unavailable` after steps 1c and 1d. Then announce:
 
 > "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
 
@@ -171,16 +204,27 @@ curl -s "https://slack.com/api/search.messages" \
   | jq '.messages.matches[] | {text, channel: .channel.name, ts}'
 ```
 
-**On MCP failure and missing fallback env vars**, prompt the user:
+**On MCP failure and missing fallback env vars**:
+- Check if `"slack"` is in `ignoredSources`. If yes, silently mark Slack as `unavailable` and continue.
+- If not ignored, show:
 
-> "Slack MCP isn't available and the REST fallback isn't configured — Slack messages won't be included.
+> "⚠️ Slack MCP isn't available and the REST fallback isn't configured — Slack messages won't be included.
 >
-> You can fix this two ways:
+> What would you like to do?
+> **a) Ignore forever** — don't remind me about Slack again
+> **b) Ignore this time** — skip Slack now, remind me next run
+> **c) Fix it** — walk me through setting up Slack"
+
+If **a)**: add `"slack"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **b)**: mark as `unavailable`, continue.
+If **c)**: prompt:
+
+> "You can fix this two ways:
 >
 > **Option A — Authenticate the Slack MCP** (recommended):
 > Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
 >
-> **Option B — Set up the REST fallback** (or press Enter at any prompt to skip Slack):
+> **Option B — Set up the REST fallback**:
 >
 > **Step 1 — SLACK_USER_ID** — your personal Slack user ID:
 > 1. Open Slack and click your profile picture (top right)
@@ -203,7 +247,7 @@ After collecting both values, offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again? (Yes / No)"
 
-If the user provides values, append to shell profile using the same pattern as 1c. If they choose Skip, mark Slack as `unavailable` and continue.
+If values provided, append to shell profile using the same pattern as 1d. Mark Slack as available with the provided credentials.
 
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
@@ -242,20 +286,35 @@ curl -s -X POST https://api.linear.app/graphql \
   }' | jq '.data.viewer.assignedIssues.nodes[]'
 ```
 
-**On MCP failure and missing `LINEAR_API_KEY`**, prompt the user:
+**On MCP failure and missing `LINEAR_API_KEY`**:
+- Check if `"linear"` is in `ignoredSources`. If yes, silently mark Linear as `unavailable` and continue.
+- If not ignored, show:
 
-> "Linear MCP isn't available and `LINEAR_API_KEY` isn't set — Linear issues won't be included.
+> "⚠️ Linear MCP isn't available and `LINEAR_API_KEY` isn't set — Linear issues won't be included.
+>
+> What would you like to do?
+> **a) Ignore forever** — don't remind me about Linear again
+> **b) Ignore this time** — skip Linear now, remind me next run
+> **c) Fix it** — walk me through setting up Linear"
+
+If **a)**: add `"linear"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **b)**: mark as `unavailable`, continue.
+If **c)**: prompt:
+
+> "You can fix this two ways:
 >
 > **Option A — Authenticate the Linear MCP** (recommended):
-> Open Claude Code settings and authenticate the Linear integration.
+> Open Claude Code settings and authenticate the Linear integration, then re-run `/recapper`.
 >
 > **Option B — Set up the REST fallback**:
 > 1. Open Linear and go to **Settings → API → Personal API keys**
 > 2. Click **Create key**, give it a name, and copy the value
 >
-> Paste your Linear API key here (or Skip):"
+> Paste your Linear API key here (or press Enter to skip):"
 
-If provided, offer to save to shell profile. If skipped, mark Linear as `unavailable`.
+[Wait for user input. If empty, mark Linear as `unavailable` and continue.]
+
+If provided, offer to save to shell profile using the same pattern as 1d. Mark Linear as available with the provided key.
 
 **Classify each issue as:**
 - `completed` — state name contains "Done", "Completed", "Merged", "Deployed"
@@ -330,21 +389,36 @@ curl -s -X POST https://api.notion.com/v1/search \
   }' | jq '.results[] | {id, title: .properties.title.title[0].plain_text, last_edited_time, url}'
 ```
 
-**On MCP failure and missing `NOTION_TOKEN`**, prompt the user:
+**On MCP failure and missing `NOTION_TOKEN`**:
+- Check if `"notion"` is in `ignoredSources`. If yes, silently mark Notion as `unavailable` and continue.
+- If not ignored, show:
 
-> "Notion MCP isn't available and `NOTION_TOKEN` isn't set — Notion pages won't be included.
+> "⚠️ Notion MCP isn't available and `NOTION_TOKEN` isn't set — Notion pages won't be included.
+>
+> What would you like to do?
+> **a) Ignore forever** — don't remind me about Notion again
+> **b) Ignore this time** — skip Notion now, remind me next run
+> **c) Fix it** — walk me through setting up Notion"
+
+If **a)**: add `"notion"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **b)**: mark as `unavailable`, continue.
+If **c)**: prompt:
+
+> "You can fix this two ways:
 >
 > **Option A — Authenticate the Notion MCP** (recommended):
-> Open Claude Code settings and authenticate the Notion integration.
+> Open Claude Code settings and authenticate the Notion integration, then re-run `/recapper`.
 >
 > **Option B — Set up the REST fallback**:
 > 1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
 > 2. Click **New integration**, give it a name
 > 3. Copy the **Internal Integration Token** (starts with `secret_`)
 >
-> Paste your Notion token here (or Skip):"
+> Paste your Notion token here (or press Enter to skip):"
 
-If provided, offer to save to shell profile. If skipped, mark Notion as `unavailable`.
+[Wait for user input. If empty, mark Notion as `unavailable` and continue.]
+
+If provided, offer to save to shell profile using the same pattern as 1d. Mark Notion as available with the provided token.
 
 **Classify each page as:**
 - `created` — `created_time` starts with TARGET_DATE
@@ -398,13 +472,19 @@ Fetch all events for the target date:
 - `timeMin: TARGET_DATE + "T00:00:00Z"`
 - `timeMax: TARGET_DATE + "T23:59:59Z"`
 
-**On MCP failure**, tell the user:
+**On MCP failure**:
+- Check if `"calendar"` is in `ignoredSources`. If yes, silently mark Calendar as `unavailable` and continue.
+- If not ignored, show:
 
-> "Google Calendar MCP isn't authenticated — calendar events won't be included.
+> "⚠️ Google Calendar MCP isn't authenticated — calendar events won't be included.
 >
-> To fix this: Open Claude Code settings and authenticate the Google Calendar integration, then re-run `/recapper`."
+> What would you like to do?
+> **a) Ignore forever** — don't remind me about Google Calendar again
+> **b) Ignore this time** — skip Calendar now, remind me next run
+> **c) Fix it** — open Claude Code settings and authenticate the Google Calendar integration, then re-run `/recapper`"
 
-Mark Calendar as `unavailable` and continue.
+If **a)**: add `"calendar"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **b)** or **c)**: mark as `unavailable` and continue (no REST fallback available).
 
 **Classify each event:**
 
