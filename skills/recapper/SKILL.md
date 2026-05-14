@@ -29,19 +29,21 @@ Read from the environment — never hardcode values:
 
 | Variable | Purpose | Required |
 |----------|---------|----------|
-| `SLACK_USER_ID` | Your Slack user ID (e.g. `U012AB3CD`) | Yes, for Slack fallback |
-| `SLACK_BOT_TOKEN` | Slack bot token | Only if MCP unavailable |
-| `GITHUB_USERNAME` | Your GitHub handle | Yes |
-| `GITHUB_TOKEN` | GitHub PAT | Yes (read by `gh` CLI) |
-| `LINEAR_API_KEY` | Linear API key | Only if MCP unavailable |
-| `NOTION_TOKEN` | Notion integration token | Only if MCP unavailable |
+| `SLACK_USER_ID` | Your Slack user ID (e.g. `U012AB3CD`) | Only if Slack MCP unavailable |
+| `SLACK_BOT_TOKEN` | Slack bot token | Only if Slack MCP unavailable |
+| `GITHUB_USERNAME` | Your GitHub handle (auto-detected if unset) | No |
+| `GITHUB_TOKEN` | GitHub PAT (read by `gh` CLI) | No — `gh auth login` handles this |
+| `LINEAR_API_KEY` | Linear API key | Only if Linear MCP unavailable |
+| `NOTION_TOKEN` | Notion integration token | Only if Notion MCP unavailable |
 | `DATADOG_API_KEY` | Datadog API key | Yes, for Datadog |
 | `DATADOG_APP_KEY` | Datadog Application key | Yes, for Datadog |
+
+MCP-preferred sources (Slack, Linear, Notion, Google Calendar) use their own authentication — env vars are fallbacks only.
 
 ## Workflow
 
 ```
-Phase 1: Setup          → Resolve date, verify env vars
+Phase 1: Setup          → Resolve date, check config, prompt for anything missing
 Phase 2: Parallel Fetch → Collect from all 6 sources concurrently
 Phase 3: Synthesize     → Deduplicate, categorize, rank by significance
 Phase 4: Output         → Write conversational summary + structured JSON
@@ -51,21 +53,96 @@ Phase 4: Output         → Write conversational summary + structured JSON
 
 ## Phase 1: Setup
 
-Resolve the target date from the first argument, defaulting to today:
+### 1a. Resolve target date
 
 ```bash
 TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
-echo "Recapping activity for: $TARGET_DATE"
 ```
 
-Then announce:
+### 1b. Check GitHub CLI
+
+```bash
+gh auth status 2>/dev/null
+```
+
+If the command fails or reports "not logged in", tell the user:
+
+> "GitHub CLI isn't authenticated — GitHub activity won't be included.
+>
+> To fix this, run the following in your terminal and follow the prompts, then re-run `/recapper`:
+> ```
+> gh auth login
+> ```"
+
+Mark GitHub as `unavailable` and skip it in Phase 2.
+
+### 1c. Check Datadog keys
+
+```bash
+echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}"
+```
+
+If either key is missing, tell the user:
+
+> "Datadog isn't configured — dashboards, monitors, and incidents won't be included.
+>
+> To set it up, you'll need two keys from Datadog:"
+
+Then prompt for each key in turn:
+
+**API Key:**
+> "**Step 1 — Datadog API Key**
+> 1. Go to **Datadog → Organization Settings → API Keys** (or ask your admin)
+> 2. Click **New Key**, give it a name, and copy the value
+>
+> Paste your Datadog API Key here (or press Enter to skip Datadog):"
+
+**Application Key** (only if API Key was provided):
+> "**Step 2 — Datadog Application Key**
+> 1. Go to **Datadog → Organization Settings → Application Keys**
+> 2. Click **New Key**, give it a name, and copy the value
+>
+> Paste your Datadog Application Key here:"
+
+After collecting both values, offer to save them:
+
+> "Save these to your shell profile so you don't have to enter them again?
+> - **Yes** — I'll append them to your shell profile
+> - **No** — use for this session only"
+
+If **Yes**, detect the user's shell profile and append:
+
+```bash
+# Detect shell profile
+if [ -n "$ZSH_VERSION" ] || [ "$SHELL" = "/bin/zsh" ]; then
+  SHELL_PROFILE="$HOME/.zshrc"
+elif [ -f "$HOME/.bashrc" ]; then
+  SHELL_PROFILE="$HOME/.bashrc"
+else
+  SHELL_PROFILE="$HOME/.bash_profile"
+fi
+
+printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
+printf 'export DATADOG_API_KEY="%s"\n' "$DATADOG_API_KEY" >> "$SHELL_PROFILE"
+printf 'export DATADOG_APP_KEY="%s"\n' "$DATADOG_APP_KEY" >> "$SHELL_PROFILE"
+```
+
+Then tell the user:
+> "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
+If **No**, export the values for the current session so Phase 2 can use them.
+
+If the user skips Datadog entirely, mark it as `unavailable` and continue.
+
+### 1d. Announce
+
 > "Collecting activity for **{TARGET_DATE}**. Fetching from Slack, Linear, GitHub, Notion, Datadog, and Google Calendar..."
 
 ---
 
 ## Phase 2: Parallel Fetch
 
-Fetch all sources. Run independent fetches concurrently where possible. If an MCP tool is unavailable or returns an error, fall back to the REST API. If both fail, mark the source as `unavailable` and continue — never halt on a single source failure.
+Fetch all sources. Run independent fetches concurrently where possible. If an MCP tool is unavailable or returns an error, fall back to the REST API. If both fail, mark the source as `unavailable`, show the relevant setup guidance below, and continue — never halt on a single source failure.
 
 ### 2a. Slack
 
@@ -89,6 +166,30 @@ curl -s "https://slack.com/api/search.messages" \
   | jq '.messages.matches[] | {text, channel: .channel.name, ts}'
 ```
 
+**On MCP failure and missing fallback env vars**, prompt the user:
+
+> "Slack MCP isn't available and the REST fallback isn't configured — Slack messages won't be included.
+>
+> You can fix this two ways:
+>
+> **Option A — Authenticate the Slack MCP** (recommended):
+> Open Claude Code settings and authenticate the Slack integration.
+>
+> **Option B — Set up the REST fallback**:
+> You'll need two values:
+>
+> **SLACK_USER_ID** — your personal Slack user ID:
+> 1. Open Slack and click your profile picture (top right)
+> 2. Click **Profile**
+> 3. Click the **•••** menu → **Copy member ID**
+> It looks like `U012AB3CD`.
+>
+> **SLACK_BOT_TOKEN** — a Slack bot token with `search:read` scope. Ask your Slack workspace admin to create one, or create a Slack app at api.slack.com/apps.
+>
+> Want me to save these to your shell profile once you have them? (Yes / No / Skip Slack)"
+
+If the user provides values, append to shell profile using the same pattern as 1c. If they choose Skip, mark Slack as `unavailable` and continue.
+
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
 **Structured output per message:**
@@ -100,7 +201,7 @@ For each message, capture the `permalink` field from the MCP result or REST resp
   "text": "...",
   "timestamp": "2026-05-14T10:32:00Z",
   "thread_id": "optional",
-  "url": "https://volleygames.slack.com/archives/C.../p..."
+  "url": "https://yourworkspace.slack.com/archives/C.../p..."
 }
 ```
 
@@ -122,9 +223,24 @@ curl -s -X POST https://api.linear.app/graphql \
   -H "Authorization: $LINEAR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "{ viewer { assignedIssues(filter: { updatedAt: { gt: \"'"$TARGET_DATE"'T00:00:00.000Z\" } }) { nodes { id identifier title state { name } updatedAt url priority } } } }"
+    "query": "{ viewer { assignedIssues(filter: { updatedAt: { gt: \"'''$TARGET_DATE'''T00:00:00.000Z\" } }) { nodes { id identifier title state { name } updatedAt url priority } } } }"
   }' | jq '.data.viewer.assignedIssues.nodes[]'
 ```
+
+**On MCP failure and missing `LINEAR_API_KEY`**, prompt the user:
+
+> "Linear MCP isn't available and `LINEAR_API_KEY` isn't set — Linear issues won't be included.
+>
+> **Option A — Authenticate the Linear MCP** (recommended):
+> Open Claude Code settings and authenticate the Linear integration.
+>
+> **Option B — Set up the REST fallback**:
+> 1. Open Linear and go to **Settings → API → Personal API keys**
+> 2. Click **Create key**, give it a name, and copy the value
+>
+> Paste your Linear API key here (or Skip):"
+
+If provided, offer to save to shell profile. If skipped, mark Linear as `unavailable`.
 
 **Classify each issue as:**
 - `completed` — state name contains "Done", "Completed", "Merged", "Deployed"
@@ -194,10 +310,26 @@ curl -s -X POST https://api.notion.com/v1/search \
   -H "Notion-Version: 2022-06-28" \
   -H "Content-Type: application/json" \
   -d '{
-    "filter": { "property": "last_edited_time", "date": { "on_or_after": "'"$TARGET_DATE"'" } },
+    "filter": { "property": "last_edited_time", "date": { "on_or_after": "'''$TARGET_DATE'''" } },
     "sort": { "direction": "descending", "timestamp": "last_edited_time" }
   }' | jq '.results[] | {id, title: .properties.title.title[0].plain_text, last_edited_time, url}'
 ```
+
+**On MCP failure and missing `NOTION_TOKEN`**, prompt the user:
+
+> "Notion MCP isn't available and `NOTION_TOKEN` isn't set — Notion pages won't be included.
+>
+> **Option A — Authenticate the Notion MCP** (recommended):
+> Open Claude Code settings and authenticate the Notion integration.
+>
+> **Option B — Set up the REST fallback**:
+> 1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
+> 2. Click **New integration**, give it a name
+> 3. Copy the **Internal Integration Token** (starts with `secret_`)
+>
+> Paste your Notion token here (or Skip):"
+
+If provided, offer to save to shell profile. If skipped, mark Notion as `unavailable`.
 
 **Classify each page as:**
 - `created` — `created_time` starts with TARGET_DATE
@@ -208,7 +340,7 @@ curl -s -X POST https://api.notion.com/v1/search \
 
 ### 2e. Datadog
 
-No Datadog MCP is available — always use the REST API. All four calls use the same auth headers:
+No Datadog MCP is available — always use the REST API. All calls use the same auth headers:
 
 ```bash
 DD_HEADERS=(-H "DD-API-KEY: $DATADOG_API_KEY" -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY")
@@ -221,6 +353,8 @@ curl -s "https://api.datadoghq.com/api/v2/audit/events?filter[from]=${TARGET_DAT
 curl -s "https://api.datadoghq.com/api/v2/incidents?filter[created][start]=${TARGET_DATE}T00:00:00Z&filter[created][end]=${TARGET_DATE}T23:59:59Z&page[size]=50" \
   "${DD_HEADERS[@]}" 2>/dev/null > /tmp/recap-dd-incidents.json
 ```
+
+If keys were not provided in Phase 1 and are still missing, skip Datadog silently (already handled in 1c).
 
 **Parse audit events by `type`:**
 
@@ -248,6 +382,14 @@ Filter audit events to only those where the `userId` or `userEmail` matches the 
 Fetch all events for the target date:
 - `timeMin: TARGET_DATE + "T00:00:00Z"`
 - `timeMax: TARGET_DATE + "T23:59:59Z"`
+
+**On MCP failure**, tell the user:
+
+> "Google Calendar MCP isn't authenticated — calendar events won't be included.
+>
+> To fix this: Open Claude Code settings and authenticate the Google Calendar integration, then re-run `/recapper`."
+
+Mark Calendar as `unavailable` and continue.
 
 **Classify each event:**
 
@@ -364,11 +506,11 @@ Print the full JSON in a fenced code block. See [references/output-templates.md]
 | Issue | Cause | Fix |
 |-------|-------|-----|
 | Slack returns 0 messages | Wrong `SLACK_USER_ID` format | Must be `U012ABCDE` not `@username` |
-| Slack MCP not authenticated | MCP session expired | Re-authenticate via MCP settings, or set `SLACK_BOT_TOKEN` |
-| Linear shows no issues | MCP not authenticated | Set `LINEAR_API_KEY` for fallback |
-| GitHub shows 0 events | Wrong username or missing token | Run `gh api user` to confirm identity |
-| Datadog 403 | Missing app key | Both `DATADOG_API_KEY` and `DATADOG_APP_KEY` required |
+| Slack MCP not authenticated | MCP session expired | Re-authenticate via Claude Code settings, or run through Slack fallback setup |
+| Linear shows no issues | MCP not authenticated | Re-authenticate via Claude Code settings, or run through Linear fallback setup |
+| GitHub shows 0 events | `gh` CLI not logged in | Run `gh auth login` |
+| Datadog 403 | Missing or wrong keys | Re-run `/recapper` — Phase 1 will prompt you to re-enter |
 | Datadog audit returns no user events | Wrong user filter | Check `userEmail` field in audit response against your email |
-| Google Calendar empty | MCP not authenticated | Authenticate Google Calendar MCP |
-| Notion 401 | Token invalid | Run `NOTION_TOKEN=secret_... /recapper` or re-authenticate MCP |
+| Google Calendar empty | MCP not authenticated | Re-authenticate via Claude Code settings |
+| Notion 401 | Token invalid or MCP expired | Re-authenticate via Claude Code settings, or run through Notion fallback setup |
 | Date format error | Wrong date format | Use `YYYY-MM-DD` — e.g. `2026-05-14` not `May 14` |
