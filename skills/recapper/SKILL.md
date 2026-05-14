@@ -157,9 +157,12 @@ else
   SHELL_PROFILE="$HOME/.bash_profile"
 fi
 
+# Escape any embedded single quotes in values before writing
+escape_sq() { printf '%s' "$1" | sed "s/'/'\\''/g"; }
+
 printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
-printf 'export DATADOG_API_KEY='"'"\'''%s'"'"\'''\n' "$DATADOG_API_KEY" >> "$SHELL_PROFILE"
-printf 'export DATADOG_APP_KEY='"'"\'''%s'"'"\'''\n' "$DATADOG_APP_KEY" >> "$SHELL_PROFILE"
+printf 'export DATADOG_API_KEY='"'"\'''%s'"'"\'''\n' "$(escape_sq "$DATADOG_API_KEY")" >> "$SHELL_PROFILE"
+printf 'export DATADOG_APP_KEY='"'"\'''%s'"'"\'''\n' "$(escape_sq "$DATADOG_APP_KEY")" >> "$SHELL_PROFILE"
 ```
 
 Then tell the user:
@@ -247,7 +250,7 @@ After collecting both values, offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again? (Yes / No)"
 
-If values provided, escape single quotes with `escape_sq` (defined in 1d) and escape single quotes with `escape_sq` (defined in 1d) and append to shell profile using the same pattern as 1d. Mark Slack as available with the provided credentials.
+If values provided, escape single quotes with `escape_sq` (defined in 1d) and append to shell profile using the same pattern as 1d. Mark Slack as available with the provided credentials.
 
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
