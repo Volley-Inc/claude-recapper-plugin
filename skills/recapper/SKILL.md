@@ -123,8 +123,8 @@ else
 fi
 
 printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
-printf 'export DATADOG_API_KEY="%s"\n' "$DATADOG_API_KEY" >> "$SHELL_PROFILE"
-printf 'export DATADOG_APP_KEY="%s"\n' "$DATADOG_APP_KEY" >> "$SHELL_PROFILE"
+printf 'export DATADOG_API_KEY='"'"'%s'"'"'\n' "$DATADOG_API_KEY" >> "$SHELL_PROFILE"
+printf 'export DATADOG_APP_KEY='"'"'%s'"'"'\n' "$DATADOG_APP_KEY" >> "$SHELL_PROFILE"
 ```
 
 Then tell the user:
