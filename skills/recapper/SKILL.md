@@ -65,7 +65,7 @@ TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
 mkdir -p "${HOME}/.config/recapper"
 if [ ! -f "$RECAPPER_CONFIG" ]; then
-  echo '{"ignoredSources":[]}' > "$RECAPPER_CONFIG"
+  echo '{"ignoredSources":[],"calendarIds":[]}' > "$RECAPPER_CONFIG"
   FIRST_RUN=true
 else
   FIRST_RUN=false
@@ -127,6 +127,22 @@ Then prompt for each source **individually**, waiting for a response before movi
 > "**Google Calendar** [a/b/c]:"
 
 [Wait for input.]
+
+If the user chose **a)** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` to fetch the user's calendars. Then show:
+
+> "You have access to the following calendars:
+> [list each calendar with a number, e.g. "1. Work (primary)", "2. Team Meetings", "3. Personal"]
+>
+> Which would you like to include in your recaps? Enter the numbers separated by commas (or press Enter to use your primary calendar only):"
+
+[Wait for input. Parse the numbers and save the selected calendar IDs to config:]
+
+```bash
+# Save selected calendarIds to config
+tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $ids' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
+
+If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
 For each source where the user chose **c)**: add it to `ignoredSources` using the pattern in 1b. For **b)**: mark as `unavailable` for this run only — do not write to config. For **a)**: no action needed.
 
@@ -578,9 +594,15 @@ Filter audit events to only those where the `userId` or `userEmail` matches the 
 
 **Preferred: MCP** (`mcp__claude_ai_Google_Calendar__list_events`)
 
-Fetch all events for the target date:
+First, read the configured calendar IDs from config:
+```bash
+CALENDAR_IDS=$(jq -r '.calendarIds // [] | .[]' "$RECAPPER_CONFIG" 2>/dev/null)
+```
+
+If `CALENDAR_IDS` is empty, fetch from the primary calendar only. Otherwise, fetch events for each calendar ID and merge the results. For each calendar, call `list_events` with:
 - `timeMin: TARGET_DATE + "T00:00:00Z"`
 - `timeMax: TARGET_DATE + "T23:59:59Z"`
+- `calendarId: <id>` (omit for primary)
 
 **On MCP failure**:
 - If Calendar was already marked `unavailable` in step 1c, skip this prompt entirely.
