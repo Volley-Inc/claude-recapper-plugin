@@ -222,7 +222,7 @@ After verifying (200 or 403 only), offer to save them:
 > - **Yes** — I'll append them to your shell profile
 > - **No** — use for this session only"
 
-If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1c):
+If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 
 ```bash
 printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
@@ -315,7 +315,7 @@ After collecting both values, offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again? (Yes / No)"
 
-If values provided, escape single quotes with `escape_sq` (defined in 1c) and append to shell profile using the same pattern as 1d. Mark Slack as available with the provided credentials.
+If values provided, escape single quotes with `escape_sq` (defined in 1d) and append to shell profile using the same pattern as 1f. Mark Slack as available with the provided credentials.
 
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
@@ -386,7 +386,7 @@ If provided, offer to save to shell profile:
 
 > "Save this to your shell profile so you don't have to enter it again? (Yes / No)"
 
-If **Yes**, escape single quotes with `escape_sq` (defined in 1c) and append:
+If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
 ```bash
 printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHELL_PROFILE"
 ```
@@ -498,7 +498,7 @@ If provided, offer to save to shell profile:
 
 > "Save this to your shell profile so you don't have to enter it again? (Yes / No)"
 
-If **Yes**, escape single quotes with `escape_sq` (defined in 1c) and append:
+If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
 ```bash
 printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PROFILE"
 ```
