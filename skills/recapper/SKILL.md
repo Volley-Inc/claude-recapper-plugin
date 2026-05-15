@@ -133,14 +133,37 @@ If **c)**: prompt for each key in turn:
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed to Step 2.]
 
 > "**Step 2 — Datadog Application Key**
+>
+> ⚠️ **This must be your own personal Application Key** — not a shared or org-wide one. The recapper uses it to filter audit logs to your activity only; a shared key will return someone else's data or nothing useful.
+>
+> You'll also need the `audit_logs_read` scope. **This requires admin approval** — if you can't add it yourself, ask your Datadog admin to either grant you the scope or assign you a role that includes it.
+>
+> **What happens without `audit_logs_read`?** The key will still work, but Datadog audit events (dashboards created, monitors edited, etc.) won't appear in your recap. Everything else (incidents, other sources) is unaffected — it's totally fine to skip this scope if it's not worth the ask.
+>
+> To create your key:
 > 1. Go to **Datadog → Organization Settings → Application Keys**
-> 2. Click **New Key**, give it a name, and copy the value
+> 2. Click **New Key**, give it a name
+> 3. Add the `audit_logs_read` scope (if available to you)
+> 4. Copy the value
 >
 > Paste your Datadog Application Key here (or press Enter to skip Datadog):"
 
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
-After collecting both values, offer to save them:
+After collecting both values, verify them before saving:
+
+```bash
+curl -s "https://api.datadoghq.com/api/v2/audit/events?page[limit]=1" \
+  -H "DD-API-KEY: $DATADOG_API_KEY" \
+  -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY" \
+  | jq -r 'if .errors then "error: \(.errors[0])" else "ok" end' 2>/dev/null
+```
+
+- If result is `"ok"`: tell the user "✅ Datadog keys verified!" and continue to save prompt.
+- If result contains `"403"` or `"Forbidden"`: tell the user "⚠️ Keys look correct but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway." and mark scope as limited.
+- If result contains any other error: tell the user "⚠️ Datadog keys don't seem valid — double-check and try again, or press Enter to skip."
+
+After verifying, offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again?
 > - **Yes** — I'll append them to your shell profile
