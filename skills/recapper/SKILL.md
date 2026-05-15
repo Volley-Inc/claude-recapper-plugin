@@ -90,12 +90,12 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 >
 > | Source | What's collected |
 > |---|---|
-> | **Slack** | Messages you sent, threads you replied in |
-> | **Linear** | Issues assigned to you, comments you left |
-> | **GitHub** | Commits, PRs opened/merged, code reviews |
-> | **Notion** | Pages you created or edited |
-> | **Datadog** | Dashboard/monitor edits, incidents |
-> | **Google Calendar** | Meetings you attended |
+> | **Slack** | Messages you sent and threads you replied in, with channel context and links |
+> | **Linear** | Issues assigned to you that were updated, comments you left, and state transitions (e.g. Backlog → In Progress → Done) |
+> | **GitHub** | Commits pushed, PRs opened or merged, branches created, code reviews given, review comments, and issue comments |
+> | **Notion** | Pages you created or edited, and comments you left on any page |
+> | **Datadog** | Dashboards, monitors, and notebooks you created or edited; incidents that were created or resolved |
+> | **Google Calendar** | Meetings you attended, classified by type (1:1, standup, team meeting, all-hands, interview, focus time) |
 >
 > For each source, reply with:
 > **a)** Include — fetch from this source every run
