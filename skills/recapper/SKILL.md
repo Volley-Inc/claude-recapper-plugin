@@ -100,15 +100,37 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 > For each source, reply with:
 > **a)** Include — fetch from this source every run
 > **b)** Ignore this time — skip today, ask again next run
-> **c)** Ignore forever — never include this source
->
-> **Slack** [a/b/c]:"
+> **c)** Ignore forever — never include this source"
 
-Wait for input, then repeat the prompt for each remaining source in order: Linear, GitHub, Notion, Datadog, Google Calendar.
+Then prompt for each source **individually**, waiting for a response before moving to the next:
+
+> "**Slack** [a/b/c]:"
+
+[Wait for input.]
+
+> "**Linear** [a/b/c]:"
+
+[Wait for input.]
+
+> "**GitHub** [a/b/c]:"
+
+[Wait for input.]
+
+> "**Notion** [a/b/c]:"
+
+[Wait for input.]
+
+> "**Datadog** [a/b/c]:"
+
+[Wait for input.]
+
+> "**Google Calendar** [a/b/c]:"
+
+[Wait for input.]
 
 For each source where the user chose **c)**: add it to `ignoredSources` using the pattern in 1b. For **b)**: mark as `unavailable` for this run only — do not write to config. For **a)**: no action needed.
 
-After all six sources are answered, continue to step 1d.
+After all six sources are answered, continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
 If `FIRST_RUN` is false, skip this step entirely.
 
@@ -130,6 +152,8 @@ escape_sq() { printf '%s' "$1" | sed "s/'/'\\\\''/g"; }
 ```
 
 ### 1e. Check GitHub CLI
+
+If GitHub was already marked `unavailable` in step 1c, skip this step entirely.
 
 ```bash
 gh auth status 2>/dev/null
@@ -156,6 +180,8 @@ If **c)**: tell the user:
 Mark as `unavailable` and stop — the user needs to re-run after authenticating.
 
 ### 1f. Check Datadog keys
+
+If Datadog was already marked `unavailable` in step 1c, skip this step entirely.
 
 ```bash
 echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}"
@@ -557,6 +583,7 @@ Fetch all events for the target date:
 - `timeMax: TARGET_DATE + "T23:59:59Z"`
 
 **On MCP failure**:
+- If Calendar was already marked `unavailable` in step 1c, skip this prompt entirely.
 - Check if `"calendar"` is in `ignoredSources`. If yes, silently mark Calendar as `unavailable` and continue.
 - If not ignored, show:
 
