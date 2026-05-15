@@ -130,7 +130,7 @@ If **c)**: prompt for each key in turn:
 >
 > Paste your Datadog API Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed to Step 2.]
 
 > "**Step 2 — Datadog Application Key**
 > 1. Go to **Datadog → Organization Settings → Application Keys**
@@ -149,7 +149,7 @@ After collecting both values, offer to save them:
 If **Yes**, detect the user's shell profile and append:
 
 ```bash
-if [ -n "$ZSH_VERSION" ] || [ "$SHELL" = "/bin/zsh" ]; then
+if [ -n "$ZSH_VERSION" ] || case "$SHELL" in */zsh) true;; *) false;; esac; then
   SHELL_PROFILE="$HOME/.zshrc"
 elif [ -f "$HOME/.bashrc" ]; then
   SHELL_PROFILE="$HOME/.bashrc"
