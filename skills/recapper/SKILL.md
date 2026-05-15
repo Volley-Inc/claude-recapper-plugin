@@ -167,21 +167,21 @@ If **c)**: prompt for each key in turn:
 
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
-After collecting both values, verify them before saving:
+After collecting both values, verify them using the HTTP status code before saving:
 
 ```bash
-curl -s "https://api.datadoghq.com/api/v2/audit/events?page[limit]=1" \
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  "https://api.datadoghq.com/api/v2/audit/events?page[limit]=1" \
   -H "DD-API-KEY: $DATADOG_API_KEY" \
-  -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY" \
-  | jq -r 'if .errors then "error: \(.errors[0])" else "ok" end' 2>/dev/null || echo "error: network or parse failure"
+  -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY" 2>/dev/null) || HTTP_STATUS="000"
 ```
 
-- If result is `"ok"`: tell the user "✅ Datadog keys verified!" and continue to save prompt.
-- If result contains `"403"` or `"Forbidden"`: tell the user "⚠️ Keys look correct but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway." and mark scope as limited.
-- If result is `"error: network or parse failure"`: tell the user "⚠️ Couldn't reach Datadog — check your network connection and try again, or press Enter to skip."
-- If result contains any other error: tell the user "⚠️ Datadog keys don't seem valid — double-check and try again, or press Enter to skip."
+- If `$HTTP_STATUS` is `200`: tell the user "✅ Datadog keys verified!" and continue to save prompt.
+- If `$HTTP_STATUS` is `403`: tell the user "⚠️ Keys authenticated but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway." and continue to save prompt.
+- If `$HTTP_STATUS` is `000` (curl failed): tell the user "⚠️ Couldn't reach Datadog — check your network connection and try again, or press Enter to skip." Mark Datadog as `unavailable` and continue — do NOT proceed to save prompt.
+- If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS) — double-check and try again, or press Enter to skip." Mark Datadog as `unavailable` and continue — do NOT proceed to save prompt.
 
-After verifying, offer to save them:
+After verifying (200 or 403 only), offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again?
 > - **Yes** — I'll append them to your shell profile
