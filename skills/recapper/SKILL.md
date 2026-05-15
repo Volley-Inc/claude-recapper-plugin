@@ -74,7 +74,7 @@ jq -e --arg src "source-name" '.ignoredSources | index($src) != null' "$RECAPPER
 
 To add a source to the ignored list:
 ```bash
-jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > /tmp/rc-tmp.json && mv /tmp/rc-tmp.json "$RECAPPER_CONFIG"
+jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$(mktemp)" && mv "$_" "$RECAPPER_CONFIG"
 ```
 
 ### 1c. Check GitHub CLI
@@ -161,8 +161,8 @@ fi
 escape_sq() { printf '%s' "$1" | sed "s/'/'\\''/g"; }
 
 printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
-printf 'export DATADOG_API_KEY='"'"\'''%s'"'"\'''\n' "$(escape_sq "$DATADOG_API_KEY")" >> "$SHELL_PROFILE"
-printf 'export DATADOG_APP_KEY='"'"\'''%s'"'"\'''\n' "$(escape_sq "$DATADOG_APP_KEY")" >> "$SHELL_PROFILE"
+printf "export DATADOG_API_KEY='%s'\n" "$(escape_sq "$DATADOG_API_KEY")" >> "$SHELL_PROFILE"
+printf "export DATADOG_APP_KEY='%s'\n" "$(escape_sq "$DATADOG_APP_KEY")" >> "$SHELL_PROFILE"
 ```
 
 Then tell the user:
@@ -237,12 +237,12 @@ If **c)**: prompt:
 >
 > Paste your Slack User ID here (or press Enter to skip Slack):"
 
-[Wait for user input. If empty, mark Slack as `unavailable` and continue.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to Step 2.]
 
-> "**Step 2 — SLACK_BOT_TOKEN** — a Slack bot token with `search:read` scope:
-> Ask your Slack workspace admin to create one, or create a Slack app at api.slack.com/apps with the `search:read` scope and copy the Bot User OAuth Token.
+> "**Step 2 — SLACK_BOT_TOKEN** — a Slack **User** OAuth Token with `search:read` scope:
+> Create a Slack app at api.slack.com/apps, add the `search:read` **user** scope (under "OAuth & Permissions → User Token Scopes"), install the app to your workspace, and copy the **User OAuth Token** (starts with `xoxp-`).
 >
-> Paste your Slack Bot Token here:"
+> Paste your Slack Bot Token here (or press Enter to skip Slack):"
 
 [Wait for user input. If empty, mark Slack as `unavailable` and continue.]
 
@@ -317,7 +317,15 @@ If **c)**: prompt:
 
 [Wait for user input. If empty, mark Linear as `unavailable` and continue.]
 
-If provided, escape single quotes with `escape_sq` (defined in 1d) and save to shell profile using the same pattern as 1d. Mark Linear as available with the provided key.
+If provided, offer to save to shell profile:
+
+> "Save this to your shell profile so you don't have to enter it again? (Yes / No)"
+
+If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
+```bash
+printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHELL_PROFILE"
+```
+If **No**, export for the current session only. Mark Linear as available with the provided key.
 
 **Classify each issue as:**
 - `completed` — state name contains "Done", "Completed", "Merged", "Deployed"
@@ -421,7 +429,15 @@ If **c)**: prompt:
 
 [Wait for user input. If empty, mark Notion as `unavailable` and continue.]
 
-If provided, escape single quotes with `escape_sq` (defined in 1d) and save to shell profile using the same pattern as 1d. Mark Notion as available with the provided token.
+If provided, offer to save to shell profile:
+
+> "Save this to your shell profile so you don't have to enter it again? (Yes / No)"
+
+If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
+```bash
+printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PROFILE"
+```
+If **No**, export for the current session only. Mark Notion as available with the provided token.
 
 **Classify each page as:**
 - `created` — `created_time` starts with TARGET_DATE
