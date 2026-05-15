@@ -91,7 +91,7 @@ else
 fi
 
 # Escape any embedded single quotes in values before writing
-escape_sq() { printf '%s' "$1" | sed "s/'/'\\''/g"; }
+escape_sq() { printf '%s' "$1" | sed "s/'/'\\\\''/g"; }
 ```
 
 ### 1d. Check GitHub CLI
