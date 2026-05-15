@@ -64,7 +64,12 @@ TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 ```bash
 RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
 mkdir -p "${HOME}/.config/recapper"
-[ ! -f "$RECAPPER_CONFIG" ] && echo '{"ignoredSources":[]}' > "$RECAPPER_CONFIG"
+if [ ! -f "$RECAPPER_CONFIG" ]; then
+  echo '{"ignoredSources":[]}' > "$RECAPPER_CONFIG"
+  FIRST_RUN=true
+else
+  FIRST_RUN=false
+fi
 ```
 
 To check whether a source is ignored:
@@ -77,7 +82,37 @@ To add a source to the ignored list:
 tmp="$(mktemp)" && jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
-### 1c. Shell profile setup
+### 1c. First-run source configuration
+
+If `FIRST_RUN` is true (set in step 1b), show the following before doing anything else:
+
+> "Welcome to Recapper! Here's what I'll collect from each source. You can choose what to include now — you can always change this by running `/recapper` again.
+>
+> | Source | What's collected |
+> |---|---|
+> | **Slack** | Messages you sent, threads you replied in |
+> | **Linear** | Issues assigned to you, comments you left |
+> | **GitHub** | Commits, PRs opened/merged, code reviews |
+> | **Notion** | Pages you created or edited |
+> | **Datadog** | Dashboard/monitor edits, incidents |
+> | **Google Calendar** | Meetings you attended |
+>
+> For each source, reply with:
+> **a)** Include — fetch from this source every run
+> **b)** Ignore this time — skip today, ask again next run
+> **c)** Ignore forever — never include this source
+>
+> **Slack** [a/b/c]:"
+
+Wait for input, then repeat the prompt for each remaining source in order: Linear, GitHub, Notion, Datadog, Google Calendar.
+
+For each source where the user chose **c)**: add it to `ignoredSources` using the pattern in 1b. For **b)**: mark as `unavailable` for this run only — do not write to config. For **a)**: no action needed.
+
+After all six sources are answered, continue to step 1d.
+
+If `FIRST_RUN` is false, skip this step entirely.
+
+### 1d. Shell profile setup
 
 Define these helpers once — they are used by the Slack, Linear, Notion, and Datadog save flows later:
 
@@ -94,7 +129,7 @@ fi
 escape_sq() { printf '%s' "$1" | sed "s/'/'\\\\''/g"; }
 ```
 
-### 1d. Check GitHub CLI
+### 1e. Check GitHub CLI
 
 ```bash
 gh auth status 2>/dev/null
@@ -120,7 +155,7 @@ If **c)**: tell the user:
 > ```"
 Mark as `unavailable` and stop — the user needs to re-run after authenticating.
 
-### 1e. Check Datadog keys
+### 1f. Check Datadog keys
 
 ```bash
 echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}"
@@ -200,9 +235,9 @@ Then tell the user:
 
 If **No**, export the values for the current session so Phase 2 can use them.
 
-### 1f. Announce
+### 1g. Announce
 
-Build the source list from only the sources not already marked `unavailable` after steps 1d and 1e. Then announce:
+Build the source list from only the sources not already marked `unavailable` after steps 1e and 1f. Then announce:
 
 > "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
 
