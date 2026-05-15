@@ -156,11 +156,12 @@ After collecting both values, verify them before saving:
 curl -s "https://api.datadoghq.com/api/v2/audit/events?page[limit]=1" \
   -H "DD-API-KEY: $DATADOG_API_KEY" \
   -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY" \
-  | jq -r 'if .errors then "error: \(.errors[0])" else "ok" end' 2>/dev/null
+  | jq -r 'if .errors then "error: \(.errors[0])" else "ok" end' 2>/dev/null || echo "error: network or parse failure"
 ```
 
 - If result is `"ok"`: tell the user "✅ Datadog keys verified!" and continue to save prompt.
 - If result contains `"403"` or `"Forbidden"`: tell the user "⚠️ Keys look correct but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway." and mark scope as limited.
+- If result is `"error: network or parse failure"`: tell the user "⚠️ Couldn't reach Datadog — check your network connection and try again, or press Enter to skip."
 - If result contains any other error: tell the user "⚠️ Datadog keys don't seem valid — double-check and try again, or press Enter to skip."
 
 After verifying, offer to save them:
