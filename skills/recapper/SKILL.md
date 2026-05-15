@@ -74,7 +74,7 @@ jq -e --arg src "source-name" '.ignoredSources | index($src) != null' "$RECAPPER
 
 To add a source to the ignored list:
 ```bash
-jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$(mktemp)" && mv "$_" "$RECAPPER_CONFIG"
+tmp="$(mktemp)" && jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
 ### 1c. Check GitHub CLI
