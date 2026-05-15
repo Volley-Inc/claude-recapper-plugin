@@ -304,7 +304,9 @@ For example, if GitHub and Datadog were skipped:
 
 ## Phase 2: Parallel Fetch
 
-Fetch all sources. Run independent fetches concurrently where possible. If an MCP tool is unavailable or returns an error, fall back to the REST API. If both fail, mark the source as `unavailable`, show the relevant setup guidance below, and continue — never halt on a single source failure.
+**Before fetching anything**, skip any source already marked `unavailable` from Phase 1 (steps 1b–1f) — do not attempt to fetch, fall back, or prompt for it. This ensures sources the user ignored forever or skipped this time are never contacted, even when credentials or MCP sessions happen to be present.
+
+For sources that are available: run independent fetches concurrently where possible. If an MCP tool is unavailable or returns an error, fall back to the REST API. If both fail, mark the source as `unavailable`, show the relevant setup guidance below, and continue — never halt on a single source failure.
 
 ### 2a. Slack
 
