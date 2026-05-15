@@ -82,6 +82,13 @@ To add a source to the ignored list:
 tmp="$(mktemp)" && jq --arg src "source-name" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
+After loading config, **immediately mark all sources in `ignoredSources` as `unavailable`** for this run — this applies on every run, not just first:
+```bash
+jq -r '.ignoredSources[]?' "$RECAPPER_CONFIG" 2>/dev/null
+# For each source returned, mark it unavailable before proceeding to any credential checks or fetching
+```
+Sources marked unavailable here are silently skipped in all subsequent steps — no prompts, no fetching.
+
 ### 1c. First-run source configuration
 
 If `FIRST_RUN` is true (set in step 1b), show the following before doing anything else:
@@ -98,33 +105,33 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 > | **Google Calendar** | Meetings you attended, classified by type (1:1, standup, team meeting, all-hands, interview, focus time) |
 >
 > For each source, reply with:
-> **a)** Include — fetch from this source every run
-> **b)** Ignore this time — skip today, ask again next run
-> **c)** Ignore forever — never include this source"
+> **yes** — include this source every run
+> **skip** — skip today, ask again next run
+> **never** — never include this source"
 
 Then prompt for each source **individually**, waiting for a response before moving to the next:
 
-> "**Slack** [a/b/c]:"
+> "**Slack** [yes/skip/never]:"
 
 [Wait for input.]
 
-> "**Linear** [a/b/c]:"
+> "**Linear** [yes/skip/never]:"
 
 [Wait for input.]
 
-> "**GitHub** [a/b/c]:"
+> "**GitHub** [yes/skip/never]:"
 
 [Wait for input.]
 
-> "**Notion** [a/b/c]:"
+> "**Notion** [yes/skip/never]:"
 
 [Wait for input.]
 
-> "**Datadog** [a/b/c]:"
+> "**Datadog** [yes/skip/never]:"
 
 [Wait for input.]
 
-> "**Google Calendar** [a/b/c]:"
+> "**Google Calendar** [yes/skip/never]:"
 
 [Wait for input.]
 
@@ -144,7 +151,7 @@ tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $i
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
-For each source where the user chose **c)**: add it to `ignoredSources` using the pattern in 1b. For **b)**: mark as `unavailable` for this run only — do not write to config. For **a)**: no action needed.
+For each source where the user chose **never**: add it to `ignoredSources` using the pattern in 1b, and mark as `unavailable` for this run. For **skip**: mark as `unavailable` for this run only — do not write to config. For **yes**: no action needed (source remains available).
 
 After all six sources are answered, continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
@@ -255,8 +262,15 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
 - If `$HTTP_STATUS` is `200`: tell the user "✅ Datadog keys verified!" and continue to save prompt.
 - If `$HTTP_STATUS` is `403`: tell the user "⚠️ Keys authenticated but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway." and continue to save prompt.
-- If `$HTTP_STATUS` is `000` (curl failed): tell the user "⚠️ Couldn't reach Datadog — check your network connection and try again, or press Enter to skip." Mark Datadog as `unavailable` and continue — do NOT proceed to save prompt.
-- If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS) — double-check and try again, or press Enter to skip." Mark Datadog as `unavailable` and continue — do NOT proceed to save prompt.
+- If `$HTTP_STATUS` is `000` (curl failed): tell the user:
+  > "⚠️ Couldn't reach Datadog — check your network connection. Paste corrected keys to retry, or press Enter to skip Datadog:"
+
+  [Wait for user input. If the user presses Enter (empty input), mark Datadog as `unavailable` and continue — do NOT proceed to save prompt. If they paste new values, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+
+- If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user:
+  > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS). Paste corrected keys to retry (API key first, then press Enter; then App key), or press Enter to skip Datadog:"
+
+  [Wait for user input. If the user presses Enter (empty input), mark Datadog as `unavailable` and continue — do NOT proceed to save prompt. If they paste new values, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
 
 After verifying (200 or 403 only), offer to save them:
 
@@ -279,7 +293,7 @@ If **No**, export the values for the current session so Phase 2 can use them.
 
 ### 1g. Announce
 
-Build the source list from only the sources not already marked `unavailable` after steps 1e and 1f. Then announce:
+Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Then announce:
 
 > "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
 
@@ -432,6 +446,7 @@ If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
 ```bash
 printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHELL_PROFILE"
 ```
+Mark Linear as available with the provided key.
 If **No**, export for the current session only. Mark Linear as available with the provided key.
 
 **Classify each issue as:**
@@ -544,6 +559,7 @@ If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
 ```bash
 printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PROFILE"
 ```
+Mark Notion as available with the provided token.
 If **No**, export for the current session only. Mark Notion as available with the provided token.
 
 **Classify each page as:**
