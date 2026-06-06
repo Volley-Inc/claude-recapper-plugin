@@ -165,7 +165,7 @@ tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $i
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
-For each source where the user chose **never**: add it to `ignoredSources` using the pattern in 1b, and mark as `unavailable` for this run. For **skip**: mark as `unavailable` for this run only — do not write to config. For **yes**: no action needed (source remains available).
+For each source where the user chose **never**: add it to `ignoredSources` using the pattern in 1b (use the exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), and mark as `unavailable` for this run. For **skip**: mark as `unavailable` for this run only — do not write to config. For **yes**: no action needed (source remains available).
 
 After all six sources are answered, continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
@@ -173,7 +173,7 @@ If `FIRST_RUN` is false, skip this step entirely.
 
 ### 1d. Shell profile setup
 
-Define these helpers once — they are used by the Slack, Linear, Notion, and Datadog save flows later:
+Define these helpers once — they are used by the Slack, Linear, Notion, and Datadog save flows later. **This step always runs unconditionally**, regardless of which sources are available or skipped:
 
 ```bash
 if [ -n "$ZSH_VERSION" ] || case "$SHELL" in */zsh) true;; *) false;; esac; then
@@ -190,7 +190,7 @@ escape_sq() { printf '%s' "$1" | sed "s/'/'\\\\''/g"; }
 
 ### 1e. Check GitHub CLI
 
-If GitHub was already marked `unavailable` in step 1c, skip this step entirely.
+If GitHub was already marked `unavailable` in step 1b or 1c, skip this step entirely.
 
 ```bash
 gh auth status 2>/dev/null
@@ -218,7 +218,7 @@ Mark as `unavailable` and stop — the user needs to re-run after authenticating
 
 ### 1f. Check Datadog keys
 
-If Datadog was already marked `unavailable` in step 1c, skip this step entirely.
+If Datadog was already marked `unavailable` in step 1b or 1c, skip this step entirely.
 
 ```bash
 echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}" && echo "${DATADOG_USER_EMAIL:+set}"
@@ -403,9 +403,24 @@ If **c)**: prompt:
 
 After collecting both values, offer to save them:
 
-> "Save these to your shell profile so you don't have to enter them again? (Yes / No)"
+> "Save these to your shell profile so you don't have to enter them again?
+> - **Yes** — I'll append them to your shell profile
+> - **No** — use for this session only"
 
-If values provided, escape single quotes with `escape_sq` (defined in 1d) and append to shell profile using the same pattern as 1f. Mark Slack as available with the provided credentials.
+If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
+
+```bash
+printf '\n# Slack (added by recapper)\n' >> "$SHELL_PROFILE"
+printf "export SLACK_USER_ID='%s'\n" "$(escape_sq "$SLACK_USER_ID")" >> "$SHELL_PROFILE"
+printf "export SLACK_BOT_TOKEN='%s'\n" "$(escape_sq "$SLACK_BOT_TOKEN")" >> "$SHELL_PROFILE"
+```
+
+Then tell the user:
+> "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
+If **No**, export the values for the current session so Phase 2 can use them.
+
+Mark Slack as available with the provided credentials.
 
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
@@ -634,7 +649,7 @@ If keys were not provided in Phase 1 and are still missing, skip Datadog silentl
 
 Extract the resource `id` from `attributes.resource.id` in each audit event and construct the URL using the pattern above. Always populate `url`; never leave it null.
 
-Filter audit events to only those where the `userId` or `userEmail` matches the current user.
+Filter audit events to only those where the `userId` or `userEmail` matches `$DATADOG_USER_EMAIL`.
 
 **For incidents**, check `attributes.created` and `attributes.resolved` timestamps against TARGET_DATE. Incidents link to `https://app.datadoghq.com/incidents/{id}`.
 
@@ -655,7 +670,7 @@ If `CALENDAR_IDS` is empty, fetch from the primary calendar only. Otherwise, fet
 - `calendarId: <id>` (omit for primary)
 
 **On MCP failure**:
-- If Calendar was already marked `unavailable` in step 1c, skip this prompt entirely.
+- If Calendar was already marked `unavailable` in step 1b or 1c, skip this prompt entirely.
 - Check if `"calendar"` is in `ignoredSources`. If yes, silently mark Calendar as `unavailable` and continue.
 - If not ignored, show:
 
