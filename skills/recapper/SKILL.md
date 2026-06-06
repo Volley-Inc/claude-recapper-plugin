@@ -37,6 +37,7 @@ Read from the environment — never hardcode values:
 | `NOTION_TOKEN` | Notion integration token | Only if Notion MCP unavailable |
 | `DATADOG_API_KEY` | Datadog API key | Yes, for Datadog |
 | `DATADOG_APP_KEY` | Datadog Application key | Yes, for Datadog |
+| `DATADOG_USER_EMAIL` | Your Datadog account email (used to filter audit logs to your actions only) | Yes, for Datadog |
 
 MCP-preferred sources (Slack, Linear, Notion, Google Calendar) use their own authentication — env vars are fallbacks only.
 
@@ -65,7 +66,7 @@ TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
 mkdir -p "${HOME}/.config/recapper"
 if [ ! -f "$RECAPPER_CONFIG" ]; then
-  echo '{"ignoredSources":[],"calendarIds":[]}' > "$RECAPPER_CONFIG"
+  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true}' > "$RECAPPER_CONFIG"
   FIRST_RUN=true
 else
   FIRST_RUN=false
@@ -114,6 +115,19 @@ Then prompt for each source **individually**, waiting for a response before movi
 > "**Slack** [yes/skip/never]:"
 
 [Wait for input.]
+
+If the user chose **yes** for Slack, immediately follow up with:
+
+> "**Include Direct Messages?** Should DMs appear in your Slack recap?
+> **yes** — include DMs alongside channel messages
+> **no** — channel messages only (recommended for work recaps)"
+
+[Wait for input. Save the DM preference to config:]
+
+```bash
+# Use true if they said yes, false if no
+tmp="$(mktemp)" && jq --argjson val <true|false> '.slackIncludeDMs = $val' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
 
 > "**Linear** [yes/skip/never]:"
 
@@ -207,10 +221,10 @@ Mark as `unavailable` and stop — the user needs to re-run after authenticating
 If Datadog was already marked `unavailable` in step 1c, skip this step entirely.
 
 ```bash
-echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}"
+echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}" && echo "${DATADOG_USER_EMAIL:+set}"
 ```
 
-If either key is missing:
+If any of the three are missing:
 - Check if `"datadog"` is in `ignoredSources`. If yes, silently mark Datadog as `unavailable` and continue.
 - If not ignored, show:
 
@@ -251,7 +265,15 @@ If **c)**: prompt for each key in turn:
 
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
-After collecting both values, verify them using the HTTP status code before saving:
+> "**Step 3 — Your Datadog email address**
+>
+> This is the email you use to log in to Datadog. It's used to filter audit logs so you only see your own actions — not the whole org's.
+>
+> Paste your Datadog account email here (or press Enter to skip Datadog):"
+
+[Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
+
+After collecting all three values, verify them using the HTTP status code before saving:
 
 ```bash
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -284,6 +306,7 @@ If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` 
 printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
 printf "export DATADOG_API_KEY='%s'\n" "$(escape_sq "$DATADOG_API_KEY")" >> "$SHELL_PROFILE"
 printf "export DATADOG_APP_KEY='%s'\n" "$(escape_sq "$DATADOG_APP_KEY")" >> "$SHELL_PROFILE"
+printf "export DATADOG_USER_EMAIL='%s'\n" "$(escape_sq "$DATADOG_USER_EMAIL")" >> "$SHELL_PROFILE"
 ```
 
 Then tell the user:
@@ -310,7 +333,14 @@ For sources that are available: run independent fetches concurrently where possi
 
 ### 2a. Slack
 
-**Preferred: MCP** (`mcp__claude_ai_Slack__slack_search_public_and_private`)
+Read the DM preference from config:
+```bash
+SLACK_INCLUDE_DMS=$(jq -r '.slackIncludeDMs // true' "$RECAPPER_CONFIG" 2>/dev/null)
+```
+
+**Preferred: MCP**
+- If `SLACK_INCLUDE_DMS` is `true`: use `mcp__claude_ai_Slack__slack_search_public_and_private`
+- If `SLACK_INCLUDE_DMS` is `false`: use `mcp__claude_ai_Slack__slack_search_public` (channel messages only)
 
 Search for messages sent by the user on the target date. Use these queries:
 - `from:@me after:{TARGET_DATE} before:{NEXT_DAY}` — messages sent
@@ -323,9 +353,11 @@ From results, collect:
 
 **Fallback: REST API** (if MCP unavailable or unauthenticated):
 ```bash
+# Append "-in:im -in:mpim" to exclude DMs if SLACK_INCLUDE_DMS is false
+DM_FILTER=$( [ "$SLACK_INCLUDE_DMS" = "false" ] && echo " -in:im -in:mpim" || echo "" )
 curl -s "https://slack.com/api/search.messages" \
   -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-  --data-urlencode "query=from:<@${SLACK_USER_ID}> after:${TARGET_DATE}" \
+  --data-urlencode "query=from:<@${SLACK_USER_ID}> after:${TARGET_DATE}${DM_FILTER}" \
   --data-urlencode "count=100" \
   | jq '.messages.matches[] | {text, channel: .channel.name, ts}'
 ```
