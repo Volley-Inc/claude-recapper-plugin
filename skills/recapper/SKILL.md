@@ -420,7 +420,7 @@ Then tell the user:
 
 If **No**, export the values for the current session so Phase 2 can use them.
 
-Mark Slack as available with the provided credentials.
+Mark Slack as available with the provided credentials, then proceed to fetch using the REST API fallback above.
 
 For each message, capture the `permalink` field from the MCP result or REST response — this is the direct link to the message in Slack. Always populate `url` with the permalink; never leave it null.
 
@@ -495,8 +495,8 @@ If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
 ```bash
 printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHELL_PROFILE"
 ```
-Mark Linear as available with the provided key.
-If **No**, export for the current session only. Mark Linear as available with the provided key.
+Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
+If **No**, export for the current session only. Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
 
 **Classify each issue as:**
 - `completed` — state name contains "Done", "Completed", "Merged", "Deployed"
@@ -566,7 +566,7 @@ curl -s -X POST https://api.notion.com/v1/search \
   -H "Notion-Version: 2022-06-28" \
   -H "Content-Type: application/json" \
   -d '{
-    "filter": { "property": "last_edited_time", "date": { "on_or_after": "'''$TARGET_DATE'''" } },
+    "filter": { "property": "last_edited_time", "date": { "on_or_after": "'"$TARGET_DATE"'" } },
     "sort": { "direction": "descending", "timestamp": "last_edited_time" }
   }' | jq '.results[] | {id, title: .properties.title.title[0].plain_text, last_edited_time, url}'
 ```
@@ -608,8 +608,8 @@ If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
 ```bash
 printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PROFILE"
 ```
-Mark Notion as available with the provided token.
-If **No**, export for the current session only. Mark Notion as available with the provided token.
+Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
+If **No**, export for the current session only. Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
 
 **Classify each page as:**
 - `created` — `created_time` starts with TARGET_DATE
@@ -649,7 +649,7 @@ If keys were not provided in Phase 1 and are still missing, skip Datadog silentl
 
 Extract the resource `id` from `attributes.resource.id` in each audit event and construct the URL using the pattern above. Always populate `url`; never leave it null.
 
-Filter audit events to only those where the `userId` or `userEmail` matches `$DATADOG_USER_EMAIL`.
+Filter audit events to only those where `userEmail` matches `$DATADOG_USER_EMAIL`. (The `userId` field is a UUID — do not compare it against the email address.)
 
 **For incidents**, check `attributes.created` and `attributes.resolved` timestamps against TARGET_DATE. Incidents link to `https://app.datadoghq.com/incidents/{id}`.
 
