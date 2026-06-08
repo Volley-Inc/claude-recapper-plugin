@@ -178,7 +178,7 @@ If the user presses Enter without selecting, save only the primary calendar ID. 
 For each source:
 - **never**: add to `ignoredSources` using the pattern in 1b (exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), mark as `unavailable` for this run.
 - **skip**: mark as `unavailable` for this run only — do not write to config. Also remove from `ignoredSources` if present (a prior interrupted run may have written it there).
-- **yes**: remove from `ignoredSources` if present (a prior interrupted run may have written it there). Source remains available.
+- **yes**: remove from `ignoredSources` if present, and explicitly mark as **available** for this run (step 1b may have already marked it unavailable based on the stale entry).
 
 To remove a source from `ignoredSources`:
 ```bash
