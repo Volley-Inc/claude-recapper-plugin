@@ -443,7 +443,7 @@ curl -s "https://slack.com/api/search.messages" \
 - Check if `"slack"` is in `ignoredSources`. If yes, silently mark Slack as `unavailable` and continue.
 - If not ignored, show:
 
-> "⚠️ Slack MCP isn't available and the REST fallback isn't configured — Slack messages won't be included.
+> "⚠️ Slack MCP isn't available and the REST fallback failed (missing or invalid credentials) — Slack messages won't be included.
 >
 > What would you like to do?
 > **a) Ignore forever** — don't remind me about Slack again
@@ -542,7 +542,7 @@ curl -s -X POST https://api.linear.app/graphql \
 - Check if `"linear"` is in `ignoredSources`. If yes, silently mark Linear as `unavailable` and continue.
 - If not ignored, show:
 
-> "⚠️ Linear MCP isn't available and `LINEAR_API_KEY` isn't set — Linear issues won't be included.
+> "⚠️ Linear MCP isn't available and the GraphQL fallback failed (missing or invalid `LINEAR_API_KEY`) — Linear issues won't be included.
 >
 > What would you like to do?
 > **a) Ignore forever** — don't remind me about Linear again
@@ -667,7 +667,7 @@ curl -s -X POST https://api.notion.com/v1/search \
 - Check if `"notion"` is in `ignoredSources`. If yes, silently mark Notion as `unavailable` and continue.
 - If not ignored, show:
 
-> "⚠️ Notion MCP isn't available and `NOTION_TOKEN` isn't set — Notion pages won't be included.
+> "⚠️ Notion MCP isn't available and the REST fallback failed (missing or invalid `NOTION_TOKEN`) — Notion pages won't be included.
 >
 > What would you like to do?
 > **a) Ignore forever** — don't remind me about Notion again
