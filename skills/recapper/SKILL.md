@@ -238,9 +238,7 @@ If Datadog was already marked `unavailable` in step 1b or 1c, skip this step ent
 echo "${DATADOG_API_KEY:+set}" && echo "${DATADOG_APP_KEY:+set}" && echo "${DATADOG_USER_EMAIL:+set}"
 ```
 
-If any of the three are missing:
-- Check if `"datadog"` is in `ignoredSources`. If yes, silently mark Datadog as `unavailable` and continue.
-- If not ignored, show:
+If any of the three are missing, show:
 
 > "⚠️ Datadog isn't configured — dashboards, monitors, and incidents won't be included.
 >
