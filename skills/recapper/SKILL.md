@@ -132,7 +132,7 @@ Prompt for each source **individually**, applying the choice immediately before 
 - **skip**: mark as unavailable for this run only; remove `"slack"` from `ignoredSources` if present.
 - **never**: add `"slack"` to `ignoredSources`; mark as unavailable.]
 
-If **yes**, immediately follow up:
+If **yes** or **skip**, immediately follow up with the DM preference (skip users will have Slack included on their next run and need this set):
 
 > "**Include Direct Messages?** Should DMs appear in your Slack recap?
 > **yes** — include DMs alongside channel messages
@@ -146,6 +146,8 @@ tmp="$(mktemp)" && jq '.slackIncludeDMs = true' "$RECAPPER_CONFIG" > "$tmp" && m
 # If no to DMs:
 tmp="$(mktemp)" && jq '.slackIncludeDMs = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
+
+Do **not** ask this for **never** — Slack will never be fetched.
 
 **Linear:**
 
@@ -285,8 +287,8 @@ If any of the three are missing, show:
 > **b) Ignore this time** — skip Datadog now, remind me next run
 > **c) Fix it** — I'll walk you through getting your API keys"
 
-If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)**: mark as `unavailable`, continue.
+If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue — do NOT proceed to the key prompts below.
+If **b)**: mark as `unavailable`, continue — do NOT proceed to the key prompts below.
 If **c)**: only prompt for keys that are actually missing — skip any step whose key is already set in the environment. Set `DATADOG_KEYS_JUST_COLLECTED=true` only after a key is successfully entered (not at the start of this flow):
 
 If `DATADOG_API_KEY` is not set:
