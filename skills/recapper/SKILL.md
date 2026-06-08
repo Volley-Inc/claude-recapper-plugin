@@ -61,6 +61,11 @@ TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 # NEXT_DAY is used in Slack search queries — the day after TARGET_DATE
 NEXT_DAY=$(date -d "$TARGET_DATE + 1 day" +%Y-%m-%d 2>/dev/null || \
            date -j -v+1d -f "%Y-%m-%d" "$TARGET_DATE" +%Y-%m-%d 2>/dev/null)
+# Validate: if TARGET_DATE isn't YYYY-MM-DD or NEXT_DAY is empty, stop with a clear error
+if [[ ! "$TARGET_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ -z "$NEXT_DAY" ]; then
+  echo "Error: invalid date format. Use YYYY-MM-DD — e.g. $(date +%Y-%m-%d)"
+  exit 1
+fi
 ```
 
 ### 1b. Load ignored-sources config
@@ -288,7 +293,7 @@ If `DATADOG_USER_EMAIL` is not set:
 
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
-Whether keys were just collected above or were already in the environment, always verify them now. (`DATADOG_KEYS_JUST_COLLECTED` defaults to false if the Fix-it path was not taken.)
+If Datadog is not already marked `unavailable`, verify the keys now. (`DATADOG_KEYS_JUST_COLLECTED` defaults to false if the Fix-it path was not taken.)
 
 ```bash
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -329,7 +334,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY`, set `DATADOG_KEYS_JUST_COLLECTED=true`, and re-run the HTTP status check above.]
 
 - If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user:
   > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS)."
@@ -340,7 +345,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY`, set `DATADOG_KEYS_JUST_COLLECTED=true`, and re-run the HTTP status check above.]
 
 ### 1g. Announce
 
@@ -427,9 +432,9 @@ If **c)**: prompt:
 >
 > Paste your Slack Bot Token here (or press Enter to skip Slack):"
 
-[Wait for user input. If empty, mark Slack as `unavailable` and continue.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the save and availability steps below.]
 
-After collecting both values, offer to save them:
+If both SLACK_USER_ID and SLACK_BOT_TOKEN were provided, offer to save them:
 
 > "Save these to your shell profile so you don't have to enter them again?
 > - **Yes** — I'll append them to your shell profile
