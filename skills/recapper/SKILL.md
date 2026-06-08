@@ -471,7 +471,7 @@ If `SLACK_USER_ID` is not set:
 > "Your Slack User ID (open your profile → **•••** → **Copy member ID**, looks like `U012AB3CD`):
 > Paste here (or press Enter to skip Slack):"
 
-[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT collect the token below.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT collect the token below. If provided, set `SLACK_USER_ID` to the entered value, export it for the current session, and set `SLACK_CREDS_JUST_COLLECTED=true`.]
 
 If `SLACK_BOT_TOKEN` is not set:
 
@@ -480,9 +480,9 @@ If `SLACK_BOT_TOKEN` is not set:
 >
 > Paste here (or press Enter to skip Slack):"
 
-[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the save and availability steps below.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the save and availability steps below. If provided, set `SLACK_BOT_TOKEN` to the entered value, export it for the current session, and set `SLACK_CREDS_JUST_COLLECTED=true`.]
 
-If both SLACK_USER_ID and SLACK_BOT_TOKEN are now set (whether pre-existing or just entered), offer to save any that were entered this session:
+If both SLACK_USER_ID and SLACK_BOT_TOKEN are now set **and `SLACK_CREDS_JUST_COLLECTED` is true** (at least one was entered this session), offer to save:
 
 > "Save these to your shell profile so you don't have to enter them again?
 > - **Yes** — I'll append them to your shell profile
