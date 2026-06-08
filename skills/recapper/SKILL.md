@@ -121,7 +121,7 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 > **skip** — exclude this run, include automatically next run
 > **never** — never include this source"
 
-Prompt for each source **individually**, applying the choice immediately before moving to the next. This ensures choices are persisted even if onboarding is interrupted.
+Prompt for each source **individually**, applying the choice immediately before moving to the next. This ensures choices are persisted even if onboarding is interrupted. **Prompt all six sources regardless of their current `ignoredSources` status** — this is the user's opportunity to change their mind from any prior partial run. Applying "yes" or "skip" immediately overrides step 1b's earlier unavailable marking for that source.
 
 **Slack:**
 
@@ -372,11 +372,11 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT show the App key prompt below.]
 
-  If a corrected API key was provided, set `DATADOG_KEYS_JUST_COLLECTED=true`, then:
+  If a corrected API key was provided, set `DATADOG_API_KEY` to the entered value, export it for the current session, and set `DATADOG_KEYS_JUST_COLLECTED=true`, then:
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and re-run the HTTP status check above.]
 
 - If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user:
   > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS)."
@@ -385,11 +385,11 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT show the App key prompt below.]
 
-  If a corrected API key was provided, set `DATADOG_KEYS_JUST_COLLECTED=true`, then:
+  If a corrected API key was provided, set `DATADOG_API_KEY` to the entered value, export it for the current session, and set `DATADOG_KEYS_JUST_COLLECTED=true`, then:
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and re-run the HTTP status check above.]
 
 ### 1g. Announce
 
