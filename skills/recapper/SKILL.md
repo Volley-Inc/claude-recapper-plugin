@@ -278,7 +278,7 @@ If **c)**: prompt for each key in turn:
 
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
-After collecting all three values, verify them using the HTTP status code before saving:
+Whether keys were just collected above or were already in the environment, always verify them now:
 
 ```bash
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -287,37 +287,50 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
   -H "DD-APPLICATION-KEY: $DATADOG_APP_KEY" 2>/dev/null) || HTTP_STATUS="000"
 ```
 
-- If `$HTTP_STATUS` is `200`: tell the user "✅ Datadog keys verified!" and continue to save prompt.
-- If `$HTTP_STATUS` is `403`: tell the user "⚠️ Keys authenticated but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway." and continue to save prompt.
-- If `$HTTP_STATUS` is `000` (curl failed): tell the user:
-  > "⚠️ Couldn't reach Datadog — check your network connection. Paste corrected keys to retry, or press Enter to skip Datadog:"
+- If `$HTTP_STATUS` is `200` or `403`:
+  - If `403`: tell the user "⚠️ Keys authenticated but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway."
+  - If keys were **just collected** in this session (not pre-existing in environment): tell the user "✅ Datadog keys verified!" and offer to save:
 
-  [Wait for user input. If the user presses Enter (empty input), mark Datadog as `unavailable` and continue — do NOT proceed to save prompt. If they paste new values, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+    > "Save these to your shell profile so you don't have to enter them again?
+    > - **Yes** — I'll append them to your shell profile
+    > - **No** — use for this session only"
+
+    If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
+
+    ```bash
+    printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
+    printf "export DATADOG_API_KEY='%s'\n" "$(escape_sq "$DATADOG_API_KEY")" >> "$SHELL_PROFILE"
+    printf "export DATADOG_APP_KEY='%s'\n" "$(escape_sq "$DATADOG_APP_KEY")" >> "$SHELL_PROFILE"
+    printf "export DATADOG_USER_EMAIL='%s'\n" "$(escape_sq "$DATADOG_USER_EMAIL")" >> "$SHELL_PROFILE"
+    ```
+
+    Then tell the user:
+    > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
+    If **No**, export the values for the current session so Phase 2 can use them.
+  - If keys were **pre-existing** in environment: continue silently — no save prompt needed.
+
+- If `$HTTP_STATUS` is `000` (curl failed): tell the user:
+  > "⚠️ Couldn't reach Datadog — check your network connection."
+
+  > "Paste corrected API key (or press Enter to skip Datadog):"
+
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed.]
+
+  > "Paste corrected App key (or press Enter to skip Datadog):"
+
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
 
 - If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user:
-  > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS). Paste corrected keys to retry (API key first, then press Enter; then App key), or press Enter to skip Datadog:"
+  > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS)."
 
-  [Wait for user input. If the user presses Enter (empty input), mark Datadog as `unavailable` and continue — do NOT proceed to save prompt. If they paste new values, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
+  > "Paste corrected API key (or press Enter to skip Datadog):"
 
-After verifying (200 or 403 only), offer to save them:
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed.]
 
-> "Save these to your shell profile so you don't have to enter them again?
-> - **Yes** — I'll append them to your shell profile
-> - **No** — use for this session only"
+  > "Paste corrected App key (or press Enter to skip Datadog):"
 
-If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
-
-```bash
-printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
-printf "export DATADOG_API_KEY='%s'\n" "$(escape_sq "$DATADOG_API_KEY")" >> "$SHELL_PROFILE"
-printf "export DATADOG_APP_KEY='%s'\n" "$(escape_sq "$DATADOG_APP_KEY")" >> "$SHELL_PROFILE"
-printf "export DATADOG_USER_EMAIL='%s'\n" "$(escape_sq "$DATADOG_USER_EMAIL")" >> "$SHELL_PROFILE"
-```
-
-Then tell the user:
-> "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
-
-If **No**, export the values for the current session so Phase 2 can use them.
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
 
 ### 1g. Announce
 
