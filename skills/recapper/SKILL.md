@@ -462,7 +462,7 @@ If **c)**: ask the user to choose:
 >
 > Choose A or B (or press Enter to skip Slack):"
 
-[Wait for input. If empty: mark Slack as `unavailable` and continue. If **A**: mark as `unavailable` and stop — user will re-run after authenticating. If **B**: proceed below.]
+[Wait for input. If empty: mark Slack as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap will run without Slack; user can re-run after authenticating. If **B**: proceed below.]
 
 If user chose **B**, collect only the values not already in the environment:
 
@@ -555,16 +555,19 @@ curl -s -X POST https://api.linear.app/graphql \
 
 If **a)**: add `"linear"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
-If **c)**: prompt:
+If **c)**: ask the user to choose:
 
 > "You can fix this two ways:
 >
-> **Option A — Authenticate the Linear MCP** (recommended):
-> Open Claude Code settings and authenticate the Linear integration, then re-run `/recapper`.
+> **A — Authenticate the Linear MCP** (recommended): Open Claude Code settings and authenticate the Linear integration, then re-run `/recapper`.
 >
-> **Option B — Set up the REST fallback**:
-> 1. Open Linear and go to **Settings → API → Personal API keys**
-> 2. Click **Create key**, give it a name, and copy the value
+> **B — Set up the REST fallback**: I'll collect your API key now.
+>
+> Choose A or B (or press Enter to skip Linear):"
+
+[Wait for input. If empty: mark Linear as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap runs without Linear; user can re-run after authenticating. If **B**: proceed below.]
+
+> "Open Linear → **Settings → API → Personal API keys** → Create key → copy value.
 >
 > Paste your Linear API key here (or press Enter to skip):"
 
@@ -677,17 +680,19 @@ curl -s -X POST https://api.notion.com/v1/search \
 
 If **a)**: add `"notion"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
-If **c)**: prompt:
+If **c)**: ask the user to choose:
 
 > "You can fix this two ways:
 >
-> **Option A — Authenticate the Notion MCP** (recommended):
-> Open Claude Code settings and authenticate the Notion integration, then re-run `/recapper`.
+> **A — Authenticate the Notion MCP** (recommended): Open Claude Code settings and authenticate the Notion integration, then re-run `/recapper`.
 >
-> **Option B — Set up the REST fallback**:
-> 1. Go to [notion.so/my-integrations](https://www.notion.so/my-integrations)
-> 2. Click **New integration**, give it a name
-> 3. Copy the **Internal Integration Token** (starts with `secret_`)
+> **B — Set up the REST fallback**: I'll collect your token now.
+>
+> Choose A or B (or press Enter to skip Notion):"
+
+[Wait for input. If empty: mark Notion as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap runs without Notion; user can re-run after authenticating. If **B**: proceed below.]
+
+> "Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) → New integration → copy the Internal Integration Token (starts with `secret_`).
 >
 > Paste your Notion token here (or press Enter to skip):"
 
