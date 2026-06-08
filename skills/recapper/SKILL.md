@@ -257,7 +257,7 @@ If any of the three are missing, show:
 
 If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
-If **c)**: set `DATADOG_KEYS_JUST_COLLECTED=true`, then only prompt for keys that are actually missing — skip any step whose key is already set in the environment:
+If **c)**: only prompt for keys that are actually missing — skip any step whose key is already set in the environment. Set `DATADOG_KEYS_JUST_COLLECTED=true` only after a key is successfully entered (not at the start of this flow):
 
 If `DATADOG_API_KEY` is not set:
 
@@ -267,7 +267,7 @@ If `DATADOG_API_KEY` is not set:
 >
 > Paste your Datadog API Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys. If provided, set `DATADOG_KEYS_JUST_COLLECTED=true`.]
 
 If `DATADOG_APP_KEY` is not set:
 
@@ -287,7 +287,7 @@ If `DATADOG_APP_KEY` is not set:
 >
 > Paste your Datadog Application Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys. If provided, set `DATADOG_KEYS_JUST_COLLECTED=true`.]
 
 If `DATADOG_USER_EMAIL` is not set:
 
@@ -297,7 +297,7 @@ If `DATADOG_USER_EMAIL` is not set:
 >
 > Paste your Datadog account email here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_KEYS_JUST_COLLECTED=true`.]
 
 If Datadog is not already marked `unavailable`, verify the keys now. (`DATADOG_KEYS_JUST_COLLECTED` defaults to false if the Fix-it path was not taken.)
 
