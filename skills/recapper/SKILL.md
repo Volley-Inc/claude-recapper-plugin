@@ -362,7 +362,7 @@ From results, collect:
 DM_FILTER=$( [ "$SLACK_INCLUDE_DMS" = "false" ] && echo " -in:im -in:mpim" || echo "" )
 curl -s "https://slack.com/api/search.messages" \
   -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
-  --data-urlencode "query=from:<@${SLACK_USER_ID}> after:${TARGET_DATE}${DM_FILTER}" \
+  --data-urlencode "query=from:<@${SLACK_USER_ID}> after:${TARGET_DATE} before:${NEXT_DAY}${DM_FILTER}" \
   --data-urlencode "count=100" \
   | jq '.messages.matches[] | {text, channel: .channel.name, ts}'
 ```
