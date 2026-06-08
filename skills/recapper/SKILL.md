@@ -526,8 +526,9 @@ printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHEL
 Then tell the user:
 > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
 
+If **No**, export for the current session only.
+
 Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
-If **No**, export for the current session only. Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
 
 **Classify each issue as:**
 - `completed` — state name contains "Done", "Completed", "Merged", "Deployed"
@@ -646,8 +647,9 @@ printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PR
 Then tell the user:
 > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
 
+If **No**, export for the current session only.
+
 Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
-If **No**, export for the current session only. Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
 
 **Classify each page as:**
 - `created` — `created_time` starts with TARGET_DATE
