@@ -439,7 +439,7 @@ curl -s "https://slack.com/api/search.messages" \
   | jq '.messages.matches[] | {text, channel: .channel.name, ts}'
 ```
 
-**On MCP failure and missing fallback env vars**:
+**On MCP failure and REST fallback failure** (whether env vars are missing or set but invalid):
 - Check if `"slack"` is in `ignoredSources`. If yes, silently mark Slack as `unavailable` and continue.
 - If not ignored, show:
 
@@ -542,7 +542,7 @@ curl -s -X POST https://api.linear.app/graphql \
   }' | jq '.data.viewer.assignedIssues.nodes[]'
 ```
 
-**On MCP failure and missing `LINEAR_API_KEY`**:
+**On MCP failure and GraphQL fallback failure** (whether `LINEAR_API_KEY` is missing or set but invalid):
 - Check if `"linear"` is in `ignoredSources`. If yes, silently mark Linear as `unavailable` and continue.
 - If not ignored, show:
 
@@ -571,7 +571,7 @@ If **c)**: ask the user to choose:
 >
 > Paste your Linear API key here (or press Enter to skip):"
 
-[Wait for user input. If empty, mark Linear as `unavailable` and continue.]
+[Wait for user input. If empty, mark Linear as `unavailable` and continue. If provided, set `LINEAR_API_KEY` to the entered value and export it for the current session.]
 
 If provided, offer to save to shell profile:
 
@@ -667,7 +667,7 @@ curl -s -X POST https://api.notion.com/v1/search \
   }' | jq '.results[] | {id, title: .properties.title.title[0].plain_text, last_edited_time, url}'
 ```
 
-**On MCP failure and missing `NOTION_TOKEN`**:
+**On MCP failure and REST fallback failure** (whether `NOTION_TOKEN` is missing or set but invalid):
 - Check if `"notion"` is in `ignoredSources`. If yes, silently mark Notion as `unavailable` and continue.
 - If not ignored, show:
 
@@ -696,7 +696,7 @@ If **c)**: ask the user to choose:
 >
 > Paste your Notion token here (or press Enter to skip):"
 
-[Wait for user input. If empty, mark Notion as `unavailable` and continue.]
+[Wait for user input. If empty, mark Notion as `unavailable` and continue. If provided, set `NOTION_TOKEN` to the entered value and export it for the current session.]
 
 If provided, offer to save to shell profile:
 
