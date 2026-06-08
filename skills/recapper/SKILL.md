@@ -895,7 +895,8 @@ Print the full JSON in a fenced code block. See [references/output-templates.md]
       "date": "YYYY-MM-DD",
       "source": "slack",
       "context": "#channel or PR title",
-      "content": "..."
+      "content": "...",
+      "url": "https://..."
     }
   ]
 }
