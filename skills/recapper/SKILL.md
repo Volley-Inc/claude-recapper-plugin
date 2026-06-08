@@ -759,6 +759,13 @@ Extract the resource `id` from `attributes.resource.id` in each audit event and 
 
 Filter audit events to only those where `userEmail` matches `$DATADOG_USER_EMAIL`. (The `userId` field is a UUID — do not compare it against the email address.)
 
+If the filtered result is empty but the raw response contains audit events (i.e., there is activity but none matched your email), tell the user:
+> "⚠️ Datadog audit events were found but none matched `$DATADOG_USER_EMAIL`. If your Datadog login email is different, correct it with:
+> ```
+> export DATADOG_USER_EMAIL=correct@example.com
+> ```
+> then re-run `/recapper`."
+
 **For incidents**, check `attributes.created` and `attributes.resolved` timestamps against TARGET_DATE. Incidents link to `https://app.datadoghq.com/incidents/{id}`.
 
 ---
