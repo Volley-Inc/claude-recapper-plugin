@@ -69,11 +69,11 @@ NEXT_DAY=$(date -d "$TARGET_DATE + 1 day" +%Y-%m-%d 2>/dev/null || \
 RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
 mkdir -p "${HOME}/.config/recapper"
 if [ ! -f "$RECAPPER_CONFIG" ]; then
-  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true}' > "$RECAPPER_CONFIG"
-  FIRST_RUN=true
-else
-  FIRST_RUN=false
+  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true,"onboardingComplete":false}' > "$RECAPPER_CONFIG"
 fi
+# FIRST_RUN=true if onboarding was never completed (new install or interrupted mid-onboarding)
+# Missing key defaults to true (backward compat — existing configs pre-date this field)
+FIRST_RUN=$(jq -r 'if (.onboardingComplete // true) then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null || echo "true")
 ```
 
 To check whether a source is ignored:
@@ -172,7 +172,13 @@ If the user presses Enter without selecting, save only the primary calendar ID. 
 
 For each source where the user chose **never**: add it to `ignoredSources` using the pattern in 1b (use the exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), and mark as `unavailable` for this run. For **skip**: mark as `unavailable` for this run only — do not write to config. For **yes**: no action needed (source remains available).
 
-After all six sources are answered, continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
+After all six sources are answered, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
+
+```bash
+tmp="$(mktemp)" && jq '.onboardingComplete = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
+
+Then continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
 If `FIRST_RUN` is false, skip this step entirely.
 
