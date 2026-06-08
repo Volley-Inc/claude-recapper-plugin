@@ -115,7 +115,7 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 >
 > For each source, reply with:
 > **yes** — include this source every run
-> **skip** — skip today, ask again next run
+> **skip** — exclude this run, include automatically next run
 > **never** — never include this source"
 
 Then prompt for each source **individually**, waiting for a response before moving to the next:
@@ -177,7 +177,7 @@ If the user presses Enter without selecting, save only the primary calendar ID. 
 
 For each source:
 - **never**: add to `ignoredSources` using the pattern in 1b (exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), mark as `unavailable` for this run.
-- **skip**: mark as `unavailable` for this run only — do not write to config. Also remove from `ignoredSources` if present (a prior interrupted run may have written it there).
+- **skip**: mark as `unavailable` for this run only — do not write to config. Also remove from `ignoredSources` if present (a prior interrupted run may have written it there). The source will be available again on the next run without prompting.
 - **yes**: remove from `ignoredSources` if present, and explicitly mark as **available** for this run (step 1b may have already marked it unavailable based on the stale entry).
 
 To remove a source from `ignoredSources`:
@@ -328,6 +328,8 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
     Then tell the user:
     > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
 
+    Also export the values for the current session so Phase 2 can use them immediately without restarting.
+
     If **No**, export the values for the current session so Phase 2 can use them.
   - If `DATADOG_KEYS_JUST_COLLECTED` is false (all keys were pre-existing): continue silently — no save prompt needed.
 
@@ -465,6 +467,8 @@ printf "export SLACK_BOT_TOKEN='%s'\n" "$(escape_sq "$SLACK_BOT_TOKEN")" >> "$SH
 Then tell the user:
 > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
 
+Also export the values for the current session so Phase 2 can use them immediately.
+
 If **No**, export the values for the current session so Phase 2 can use them.
 
 Mark Slack as available with the provided credentials, then proceed to fetch using the REST API fallback above.
@@ -548,6 +552,8 @@ printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHEL
 
 Then tell the user:
 > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
+Also export the value for the current session so Phase 2 can use it immediately.
 
 If **No**, export for the current session only.
 
@@ -669,6 +675,8 @@ printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PR
 
 Then tell the user:
 > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
+Also export the value for the current session so Phase 2 can use it immediately.
 
 If **No**, export for the current session only.
 
