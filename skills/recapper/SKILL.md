@@ -207,9 +207,7 @@ If GitHub was already marked `unavailable` in step 1b or 1c, skip this step enti
 gh auth status 2>/dev/null
 ```
 
-If the command fails or reports "not logged in":
-- Check if `"github"` is in `ignoredSources`. If yes, silently mark GitHub as `unavailable` and continue.
-- If not ignored, show:
+If the command fails or reports "not logged in", show:
 
 > "⚠️ GitHub CLI isn't authenticated — GitHub activity won't be included.
 >
@@ -248,7 +246,7 @@ If any of the three are missing:
 
 If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
-If **c)**: only prompt for keys that are actually missing — skip any step whose key is already set in the environment:
+If **c)**: set `DATADOG_KEYS_JUST_COLLECTED=true`, then only prompt for keys that are actually missing — skip any step whose key is already set in the environment:
 
 If `DATADOG_API_KEY` is not set:
 
@@ -290,7 +288,7 @@ If `DATADOG_USER_EMAIL` is not set:
 
 [Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
 
-Whether keys were just collected above or were already in the environment, always verify them now:
+Whether keys were just collected above or were already in the environment, always verify them now. (`DATADOG_KEYS_JUST_COLLECTED` defaults to false if the Fix-it path was not taken.)
 
 ```bash
 HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -301,7 +299,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
 - If `$HTTP_STATUS` is `200` or `403`:
   - If `403`: tell the user "⚠️ Keys authenticated but you may be missing the `audit_logs_read` scope — Datadog audit events won't appear in recaps, but everything else will still work. Continuing anyway."
-  - If keys were **just collected** in this session (not pre-existing in environment): tell the user "✅ Datadog keys verified!" and offer to save:
+  - If `DATADOG_KEYS_JUST_COLLECTED` is true (any key was entered in this session): tell the user "✅ Datadog keys verified!" and offer to save:
 
     > "Save these to your shell profile so you don't have to enter them again?
     > - **Yes** — I'll append them to your shell profile
@@ -320,7 +318,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
     > "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
 
     If **No**, export the values for the current session so Phase 2 can use them.
-  - If keys were **pre-existing** in environment: continue silently — no save prompt needed.
+  - If `DATADOG_KEYS_JUST_COLLECTED` is false (all keys were pre-existing): continue silently — no save prompt needed.
 
 - If `$HTTP_STATUS` is `000` (curl failed): tell the user:
   > "⚠️ Couldn't reach Datadog — check your network connection."
