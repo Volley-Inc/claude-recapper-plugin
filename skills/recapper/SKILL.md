@@ -175,7 +175,15 @@ tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $i
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
-For each source where the user chose **never**: add it to `ignoredSources` using the pattern in 1b (use the exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), and mark as `unavailable` for this run. For **skip**: mark as `unavailable` for this run only — do not write to config. For **yes**: no action needed (source remains available).
+For each source:
+- **never**: add to `ignoredSources` using the pattern in 1b (exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), mark as `unavailable` for this run.
+- **skip**: mark as `unavailable` for this run only — do not write to config. Also remove from `ignoredSources` if present (a prior interrupted run may have written it there).
+- **yes**: remove from `ignoredSources` if present (a prior interrupted run may have written it there). Source remains available.
+
+To remove a source from `ignoredSources`:
+```bash
+tmp="$(mktemp)" && jq --arg src "source-name" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
 
 After all six sources are answered, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
 
