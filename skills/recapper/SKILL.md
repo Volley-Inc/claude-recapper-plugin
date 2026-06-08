@@ -61,9 +61,12 @@ TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
 # NEXT_DAY is used in Slack search queries — the day after TARGET_DATE
 NEXT_DAY=$(date -d "$TARGET_DATE + 1 day" +%Y-%m-%d 2>/dev/null || \
            date -j -v+1d -f "%Y-%m-%d" "$TARGET_DATE" +%Y-%m-%d 2>/dev/null)
-# Validate: if TARGET_DATE isn't YYYY-MM-DD or NEXT_DAY is empty, stop with a clear error
-if [[ ! "$TARGET_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ -z "$NEXT_DAY" ]; then
-  echo "Error: invalid date format. Use YYYY-MM-DD — e.g. $(date +%Y-%m-%d)"
+# Validate format and that the date is real (date normalizes invalid dates like Feb 30,
+# so check that the parsed result matches the input)
+PARSED=$(date -d "$TARGET_DATE" +%Y-%m-%d 2>/dev/null || \
+         date -j -f "%Y-%m-%d" "$TARGET_DATE" +%Y-%m-%d 2>/dev/null)
+if [[ ! "$TARGET_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ -z "$NEXT_DAY" ] || [ "$PARSED" != "$TARGET_DATE" ]; then
+  echo "Error: invalid date '$TARGET_DATE'. Use YYYY-MM-DD — e.g. $(date +%Y-%m-%d)"
   exit 1
 fi
 ```
@@ -118,48 +121,78 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 > **skip** — exclude this run, include automatically next run
 > **never** — never include this source"
 
-Then prompt for each source **individually**, waiting for a response before moving to the next:
+Prompt for each source **individually**, applying the choice immediately before moving to the next. This ensures choices are persisted even if onboarding is interrupted.
+
+**Slack:**
 
 > "**Slack** [yes/skip/never]:"
 
-[Wait for input.]
+[Wait for input. Apply immediately:
+- **yes**: remove `"slack"` from `ignoredSources` if present; mark as available.
+- **skip**: mark as unavailable for this run only; remove `"slack"` from `ignoredSources` if present.
+- **never**: add `"slack"` to `ignoredSources`; mark as unavailable.]
 
-If the user chose **yes** for Slack, immediately follow up with:
+If **yes**, immediately follow up:
 
 > "**Include Direct Messages?** Should DMs appear in your Slack recap?
 > **yes** — include DMs alongside channel messages
 > **no** — channel messages only (recommended for work recaps)"
 
-[Wait for input. Save the DM preference to config:]
+[Wait for input. Save DM preference to config:]
 
 ```bash
-# If user said yes to DMs:
+# If yes to DMs:
 tmp="$(mktemp)" && jq '.slackIncludeDMs = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If user said no to DMs:
+# If no to DMs:
 tmp="$(mktemp)" && jq '.slackIncludeDMs = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
+**Linear:**
+
 > "**Linear** [yes/skip/never]:"
 
-[Wait for input.]
+[Wait for input. Apply immediately:
+- **yes**: remove `"linear"` from `ignoredSources` if present; mark as available.
+- **skip**: mark as unavailable for this run only; remove `"linear"` from `ignoredSources` if present.
+- **never**: add `"linear"` to `ignoredSources`; mark as unavailable.]
+
+**GitHub:**
 
 > "**GitHub** [yes/skip/never]:"
 
-[Wait for input.]
+[Wait for input. Apply immediately:
+- **yes**: remove `"github"` from `ignoredSources` if present; mark as available.
+- **skip**: mark as unavailable for this run only; remove `"github"` from `ignoredSources` if present.
+- **never**: add `"github"` to `ignoredSources`; mark as unavailable.]
+
+**Notion:**
 
 > "**Notion** [yes/skip/never]:"
 
-[Wait for input.]
+[Wait for input. Apply immediately:
+- **yes**: remove `"notion"` from `ignoredSources` if present; mark as available.
+- **skip**: mark as unavailable for this run only; remove `"notion"` from `ignoredSources` if present.
+- **never**: add `"notion"` to `ignoredSources`; mark as unavailable.]
+
+**Datadog:**
 
 > "**Datadog** [yes/skip/never]:"
 
-[Wait for input.]
+[Wait for input. Apply immediately:
+- **yes**: remove `"datadog"` from `ignoredSources` if present; mark as available.
+- **skip**: mark as unavailable for this run only; remove `"datadog"` from `ignoredSources` if present.
+- **never**: add `"datadog"` to `ignoredSources`; mark as unavailable.]
+
+**Google Calendar:**
 
 > "**Google Calendar** [yes/skip/never]:"
 
-[Wait for input.]
+[Wait for input. Apply immediately:
+- **yes**: remove `"calendar"` from `ignoredSources` if present; mark as available.
+- **skip**: mark as unavailable for this run only; remove `"calendar"` from `ignoredSources` if present.
+- **never**: add `"calendar"` to `ignoredSources`; mark as unavailable.]
 
-If the user chose **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` to fetch the user's calendars. Then show:
+If **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
 
 > "You have access to the following calendars:
 > [list each calendar with a number, e.g. "1. Work (primary)", "2. Team Meetings", "3. Personal"]
@@ -169,20 +202,17 @@ If the user chose **yes** for Google Calendar and the Calendar MCP is available,
 [Wait for input. Parse the numbers and save the selected calendar IDs to config:]
 
 ```bash
-# Save selected calendarIds to config
 tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $ids' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
-For each source:
-- **never**: add to `ignoredSources` using the pattern in 1b (exact slugs: `"slack"`, `"linear"`, `"github"`, `"notion"`, `"datadog"`, `"calendar"`), mark as `unavailable` for this run.
-- **skip**: mark as `unavailable` for this run only — do not write to config. Also remove from `ignoredSources` if present (a prior interrupted run may have written it there). The source will be available again on the next run without prompting.
-- **yes**: remove from `ignoredSources` if present, and explicitly mark as **available** for this run (step 1b may have already marked it unavailable based on the stale entry).
-
-To remove a source from `ignoredSources`:
+To add/remove a source from `ignoredSources` (for reference above):
 ```bash
-tmp="$(mktemp)" && jq --arg src "source-name" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# Add:
+tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# Remove:
+tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
 After all six sources are answered, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
@@ -232,11 +262,11 @@ If the command fails or reports "not logged in", show:
 If **a)**: add `"github"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
 If **c)**: tell the user:
-> "Run this in your terminal and follow the prompts, then re-run `/recapper`:
+> "Run this in your terminal and follow the prompts, then re-run `/recapper` to include GitHub:
 > ```
 > gh auth login
 > ```"
-Mark as `unavailable` and stop — the user needs to re-run after authenticating.
+Mark as `unavailable` and continue — the rest of this recap will run without GitHub.
 
 ### 1f. Check Datadog keys
 
@@ -267,7 +297,7 @@ If `DATADOG_API_KEY` is not set:
 >
 > Paste your Datadog API Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys. If provided, set `DATADOG_KEYS_JUST_COLLECTED=true`.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys. If provided, set `DATADOG_API_KEY` to the entered value, export it for the current session, and set `DATADOG_KEYS_JUST_COLLECTED=true`.]
 
 If `DATADOG_APP_KEY` is not set:
 
@@ -287,7 +317,7 @@ If `DATADOG_APP_KEY` is not set:
 >
 > Paste your Datadog Application Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys. If provided, set `DATADOG_KEYS_JUST_COLLECTED=true`.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and set `DATADOG_KEYS_JUST_COLLECTED=true`.]
 
 If `DATADOG_USER_EMAIL` is not set:
 
@@ -297,7 +327,7 @@ If `DATADOG_USER_EMAIL` is not set:
 >
 > Paste your Datadog account email here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_KEYS_JUST_COLLECTED=true`.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_USER_EMAIL` to the entered value, export it for the current session, and set `DATADOG_KEYS_JUST_COLLECTED=true`.]
 
 If Datadog is not already marked `unavailable`, verify the keys now. (`DATADOG_KEYS_JUST_COLLECTED` defaults to false if the Fix-it path was not taken.)
 
@@ -450,7 +480,7 @@ If `SLACK_BOT_TOKEN` is not set:
 
 [Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the save and availability steps below.]
 
-If both SLACK_USER_ID and SLACK_BOT_TOKEN were provided, offer to save them:
+If both SLACK_USER_ID and SLACK_BOT_TOKEN are now set (whether pre-existing or just entered), offer to save any that were entered this session:
 
 > "Save these to your shell profile so you don't have to enter them again?
 > - **Yes** — I'll append them to your shell profile
@@ -754,7 +784,7 @@ If `CALENDAR_IDS` is empty, fetch from the primary calendar only. Otherwise, fet
 
 If **a)**: add `"calendar"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable` and continue.
-If **c)**: mark as `unavailable` and stop — the user needs to authenticate and re-run `/recapper`.
+If **c)**: tell the user to authenticate the Google Calendar integration in Claude Code settings, then re-run `/recapper` to include Calendar. Mark as `unavailable` and continue — the rest of this recap will run without Calendar.
 
 **Classify each event:**
 
