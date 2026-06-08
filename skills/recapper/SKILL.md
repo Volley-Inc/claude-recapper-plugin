@@ -73,7 +73,7 @@ if [ ! -f "$RECAPPER_CONFIG" ]; then
 fi
 # FIRST_RUN=true if onboarding was never completed (new install or interrupted mid-onboarding)
 # Missing key defaults to true (backward compat — existing configs pre-date this field)
-FIRST_RUN=$(jq -r 'if (.onboardingComplete // true) then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null || echo "true")
+FIRST_RUN=$(jq -r 'if .onboardingComplete == true then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null || echo "true")
 ```
 
 To check whether a source is ignored:
@@ -248,17 +248,21 @@ If any of the three are missing:
 
 If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
-If **c)**: prompt for each key in turn:
+If **c)**: only prompt for keys that are actually missing — skip any step whose key is already set in the environment:
 
-> "**Step 1 — Datadog API Key**
+If `DATADOG_API_KEY` is not set:
+
+> "**Datadog API Key**
 > 1. Go to **Datadog → Organization Settings → API Keys** (or ask your admin)
 > 2. Click **New Key**, give it a name, and copy the value
 >
 > Paste your Datadog API Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed to Step 2.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys.]
 
-> "**Step 2 — Datadog Application Key**
+If `DATADOG_APP_KEY` is not set:
+
+> "**Datadog Application Key**
 >
 > ⚠️ **This must be your own personal Application Key** — not a shared or org-wide one. The recapper uses it to filter audit logs to your activity only; a shared key will return someone else's data or nothing useful.
 >
@@ -274,9 +278,11 @@ If **c)**: prompt for each key in turn:
 >
 > Paste your Datadog Application Key here (or press Enter to skip Datadog):"
 
-[Wait for user input. If empty, mark Datadog as `unavailable` and continue.]
+[Wait for user input. If empty, mark Datadog as `unavailable` and stop — do NOT prompt for remaining keys.]
 
-> "**Step 3 — Your Datadog email address**
+If `DATADOG_USER_EMAIL` is not set:
+
+> "**Your Datadog email address**
 >
 > This is the email you use to log in to Datadog. It's used to filter audit logs so you only see your own actions — not the whole org's.
 >
@@ -359,7 +365,7 @@ For sources that are available: run independent fetches concurrently where possi
 
 Read the DM preference from config:
 ```bash
-SLACK_INCLUDE_DMS=$(jq -r '.slackIncludeDMs // true' "$RECAPPER_CONFIG" 2>/dev/null)
+SLACK_INCLUDE_DMS=$(jq -r 'if .slackIncludeDMs == false then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null)
 ```
 
 **Preferred: MCP**
