@@ -737,7 +737,8 @@ If `CALENDAR_IDS` is empty, fetch from the primary calendar only. Otherwise, fet
 > **c) Fix it** — open Claude Code settings and authenticate the Google Calendar integration, then re-run `/recapper`"
 
 If **a)**: add `"calendar"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)** or **c)**: mark as `unavailable` and continue (no REST fallback available).
+If **b)**: mark as `unavailable` and continue.
+If **c)**: mark as `unavailable` and stop — the user needs to authenticate and re-run `/recapper`.
 
 **Classify each event:**
 
