@@ -336,22 +336,26 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   > "Paste corrected API key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT show the App key prompt below.]
+
+  If a corrected API key was provided, set `DATADOG_KEYS_JUST_COLLECTED=true`, then:
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY`, set `DATADOG_KEYS_JUST_COLLECTED=true`, and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
 
 - If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user:
   > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS)."
 
   > "Paste corrected API key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT proceed.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue — do NOT show the App key prompt below.]
+
+  If a corrected API key was provided, set `DATADOG_KEYS_JUST_COLLECTED=true`, then:
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY`, set `DATADOG_KEYS_JUST_COLLECTED=true`, and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, update `DATADOG_API_KEY` and `DATADOG_APP_KEY` and re-run the HTTP status check above.]
 
 ### 1g. Announce
 
@@ -422,8 +426,11 @@ If **c)**: prompt:
 > Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
 >
 > **Option B — Set up the REST fallback**:
->
-> **Step 1 — SLACK_USER_ID** — your personal Slack user ID:
+> Only prompt for values that aren't already set in the environment.
+
+If `SLACK_USER_ID` is not set:
+
+> "**SLACK_USER_ID** — your personal Slack user ID:
 > 1. Open Slack and click your profile picture (top right)
 > 2. Click **Profile**
 > 3. Click the **•••** menu → **Copy member ID**
@@ -431,9 +438,11 @@ If **c)**: prompt:
 >
 > Paste your Slack User ID here (or press Enter to skip Slack):"
 
-[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to Step 2.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the token prompt or save steps below.]
 
-> "**Step 2 — SLACK_BOT_TOKEN** — a Slack **User** OAuth Token with `search:read` scope:
+If `SLACK_BOT_TOKEN` is not set:
+
+> "**SLACK_BOT_TOKEN** — a Slack **User** OAuth Token with `search:read` scope:
 > Create a Slack app at api.slack.com/apps, add the `search:read` **user** scope (under "OAuth & Permissions → User Token Scopes"), install the app to your workspace, and copy the **User OAuth Token** (starts with `xoxp-`).
 >
 > Paste your Slack Bot Token here (or press Enter to skip Slack):"
