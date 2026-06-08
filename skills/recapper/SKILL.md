@@ -58,6 +58,9 @@ Phase 4: Output         → Write conversational summary + structured JSON
 
 ```bash
 TARGET_DATE="${1:-$(date +%Y-%m-%d)}"
+# NEXT_DAY is used in Slack search queries — the day after TARGET_DATE
+NEXT_DAY=$(date -d "$TARGET_DATE + 1 day" +%Y-%m-%d 2>/dev/null || \
+           date -j -v+1d -f "%Y-%m-%d" "$TARGET_DATE" +%Y-%m-%d 2>/dev/null)
 ```
 
 ### 1b. Load ignored-sources config
@@ -125,8 +128,10 @@ If the user chose **yes** for Slack, immediately follow up with:
 [Wait for input. Save the DM preference to config:]
 
 ```bash
-# Use true if they said yes, false if no
-tmp="$(mktemp)" && jq --argjson val <true|false> '.slackIncludeDMs = $val' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If user said yes to DMs:
+tmp="$(mktemp)" && jq '.slackIncludeDMs = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If user said no to DMs:
+tmp="$(mktemp)" && jq '.slackIncludeDMs = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
 > "**Linear** [yes/skip/never]:"
@@ -149,7 +154,7 @@ tmp="$(mktemp)" && jq --argjson val <true|false> '.slackIncludeDMs = $val' "$REC
 
 [Wait for input.]
 
-If the user chose **a)** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` to fetch the user's calendars. Then show:
+If the user chose **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` to fetch the user's calendars. Then show:
 
 > "You have access to the following calendars:
 > [list each calendar with a number, e.g. "1. Work (primary)", "2. Team Meetings", "3. Personal"]
@@ -489,12 +494,19 @@ If **c)**: prompt:
 
 If provided, offer to save to shell profile:
 
-> "Save this to your shell profile so you don't have to enter it again? (Yes / No)"
+> "Save this to your shell profile so you don't have to enter it again?
+> - **Yes** — I'll append it to your shell profile
+> - **No** — use for this session only"
 
-If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
+If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 ```bash
+printf '\n# Linear (added by recapper)\n' >> "$SHELL_PROFILE"
 printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHELL_PROFILE"
 ```
+
+Then tell the user:
+> "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
 Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
 If **No**, export for the current session only. Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
 
@@ -602,12 +614,19 @@ If **c)**: prompt:
 
 If provided, offer to save to shell profile:
 
-> "Save this to your shell profile so you don't have to enter it again? (Yes / No)"
+> "Save this to your shell profile so you don't have to enter it again?
+> - **Yes** — I'll append it to your shell profile
+> - **No** — use for this session only"
 
-If **Yes**, escape single quotes with `escape_sq` (defined in 1d) and append:
+If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 ```bash
+printf '\n# Notion (added by recapper)\n' >> "$SHELL_PROFILE"
 printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PROFILE"
 ```
+
+Then tell the user:
+> "Saved to `{SHELL_PROFILE}`. Run `source {SHELL_PROFILE}` to apply in other terminals."
+
 Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
 If **No**, export for the current session only. Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
 
@@ -634,7 +653,7 @@ curl -s "https://api.datadoghq.com/api/v2/incidents?filter[created][start]=${TAR
   "${DD_HEADERS[@]}" 2>/dev/null > /tmp/recap-dd-incidents.json
 ```
 
-If keys were not provided in Phase 1 and are still missing, skip Datadog silently (already handled in 1c).
+If keys were not provided in Phase 1 and are still missing, skip Datadog silently (already handled in steps 1b and 1f).
 
 **Parse audit events by `type`:**
 
