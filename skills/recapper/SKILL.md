@@ -464,16 +464,12 @@ If **c)**: ask the user to choose:
 
 [Wait for input. If empty: mark Slack as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap will run without Slack; user can re-run after authenticating. If **B**: proceed below.]
 
-If user chose **B**, collect only the values not already in the environment:
-
-If `SLACK_USER_ID` is not set:
+If user chose **B**, re-collect both values — since REST already failed, any existing values may be invalid:
 
 > "Your Slack User ID (open your profile → **•••** → **Copy member ID**, looks like `U012AB3CD`):
 > Paste here (or press Enter to skip Slack):"
 
 [Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT collect the token below. If provided, set `SLACK_USER_ID` to the entered value, export it for the current session, and set `SLACK_CREDS_JUST_COLLECTED=true`.]
-
-If `SLACK_BOT_TOKEN` is not set:
 
 > "Your Slack User OAuth Token with `search:read` scope (starts with `xoxp-`):
 > Create a Slack app at api.slack.com/apps → OAuth & Permissions → User Token Scopes → add `search:read` → install → copy User OAuth Token.
