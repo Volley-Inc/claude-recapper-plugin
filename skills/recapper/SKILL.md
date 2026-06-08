@@ -378,7 +378,7 @@ For sources that are available: run independent fetches concurrently where possi
 
 Read the DM preference from config:
 ```bash
-SLACK_INCLUDE_DMS=$(jq -r 'if .slackIncludeDMs == false then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null)
+SLACK_INCLUDE_DMS=$(jq -r 'if .slackIncludeDMs == false then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null || echo "true")
 ```
 
 **Preferred: MCP**
@@ -418,34 +418,33 @@ curl -s "https://slack.com/api/search.messages" \
 
 If **a)**: add `"slack"` to `ignoredSources` in config, mark as `unavailable`, continue.
 If **b)**: mark as `unavailable`, continue.
-If **c)**: prompt:
+If **c)**: ask the user to choose:
 
 > "You can fix this two ways:
 >
-> **Option A — Authenticate the Slack MCP** (recommended):
-> Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
+> **A — Authenticate the Slack MCP** (recommended): Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
 >
-> **Option B — Set up the REST fallback**:
-> Only prompt for values that aren't already set in the environment.
+> **B — Set up the REST fallback**: I'll collect your Slack credentials now.
+>
+> Choose A or B (or press Enter to skip Slack):"
+
+[Wait for input. If empty: mark Slack as `unavailable` and continue. If **A**: mark as `unavailable` and stop — user will re-run after authenticating. If **B**: proceed below.]
+
+If user chose **B**, collect only the values not already in the environment:
 
 If `SLACK_USER_ID` is not set:
 
-> "**SLACK_USER_ID** — your personal Slack user ID:
-> 1. Open Slack and click your profile picture (top right)
-> 2. Click **Profile**
-> 3. Click the **•••** menu → **Copy member ID**
-> It looks like `U012AB3CD`.
->
-> Paste your Slack User ID here (or press Enter to skip Slack):"
+> "Your Slack User ID (open your profile → **•••** → **Copy member ID**, looks like `U012AB3CD`):
+> Paste here (or press Enter to skip Slack):"
 
-[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the token prompt or save steps below.]
+[Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT collect the token below.]
 
 If `SLACK_BOT_TOKEN` is not set:
 
-> "**SLACK_BOT_TOKEN** — a Slack **User** OAuth Token with `search:read` scope:
-> Create a Slack app at api.slack.com/apps, add the `search:read` **user** scope (under "OAuth & Permissions → User Token Scopes"), install the app to your workspace, and copy the **User OAuth Token** (starts with `xoxp-`).
+> "Your Slack User OAuth Token with `search:read` scope (starts with `xoxp-`):
+> Create a Slack app at api.slack.com/apps → OAuth & Permissions → User Token Scopes → add `search:read` → install → copy User OAuth Token.
 >
-> Paste your Slack Bot Token here (or press Enter to skip Slack):"
+> Paste here (or press Enter to skip Slack):"
 
 [Wait for user input. If empty, mark Slack as `unavailable` and continue — do NOT proceed to the save and availability steps below.]
 
