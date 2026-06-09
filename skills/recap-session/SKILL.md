@@ -79,8 +79,8 @@ Review the current conversation and produce a structured summary. Ask the user t
 Read the existing file (if it exists) and append the new entry:
 
 ```bash
-# Read existing entries — fall back to [] if file is missing, empty, or invalid JSON
-EXISTING=$(jq '.' "$SESSION_FILE" 2>/dev/null || echo "[]")
+# Read existing entries — fall back to [] if file is missing, empty, invalid JSON, or not an array
+EXISTING=$(jq 'if type == "array" then . else [] end' "$SESSION_FILE" 2>/dev/null || echo "[]")
 [ -z "$EXISTING" ] && EXISTING="[]"
 
 # Append new entry (agent fills in actual values)

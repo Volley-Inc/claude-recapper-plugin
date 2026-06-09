@@ -198,21 +198,6 @@ Do **not** ask this for **never** — Slack will never be fetched.
 - **skip**: mark as unavailable for this run only; remove `"calendar"` from `ignoredSources` if present.
 - **never**: add `"calendar"` to `ignoredSources`; mark as unavailable.]
 
-**Session Log Reminder:**
-
-> "Would you like a reminder to log your AI coding sessions before each recap? Running `/recap-session` at the end of a Cursor, VS Code, or Claude Code session captures work done in those tools so it shows up in your daily recap.
-> **yes** — remind me if no sessions are logged when I run /recapper
-> **no** — I'll manage this myself"
-
-[Wait for input. Save preference to config:]
-
-```bash
-# If yes:
-tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no:
-tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
-
 If **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
 
 > "You have access to the following calendars:
@@ -227,6 +212,21 @@ tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $i
 ```
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
+
+**Session Log Reminder:**
+
+> "Would you like a reminder to log your AI coding sessions before each recap? Running `/recap-session` at the end of a Cursor, VS Code, or Claude Code session captures work done in those tools so it shows up in your daily recap.
+> **yes** — remind me if no sessions are logged when I run /recapper
+> **no** — I'll manage this myself"
+
+[Wait for input. Save preference to config:]
+
+```bash
+# If yes:
+tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If no:
+tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
 
 To add/remove a source from `ignoredSources` (for reference above):
 ```bash
@@ -416,7 +416,7 @@ If `sessionReminder` is `true` in config, check whether the session file for `$T
 
 ```bash
 SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
-SESSION_COUNT=$(jq 'length' "$SESSION_FILE" 2>/dev/null || echo "0")
+SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2>/dev/null || echo "0")
 ```
 
 If `SESSION_COUNT` is `0` (file missing or empty), show:
@@ -863,7 +863,7 @@ If the file doesn't exist or is empty, skip this source silently — no prompt, 
 If the file has entries, parse them:
 
 ```bash
-jq '.[]' "$SESSION_FILE" 2>/dev/null
+jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null
 ```
 
 Each entry has: `id`, `title`, `description`, `type`, `category`, `logged_at`.
