@@ -49,7 +49,7 @@ For work done in Cursor, VS Code, Claude Code, or any other AI coding tool, run 
 
 ```
 Phase 1: Setup          → Resolve date, check config, prompt for anything missing
-Phase 2: Parallel Fetch → Collect from all 6 sources concurrently
+Phase 2: Parallel Fetch → Collect from up to 7 sources concurrently (Slack, Linear, GitHub, Notion, Datadog, Google Calendar, AI Sessions)
 Phase 3: Synthesize     → Deduplicate, categorize, rank by significance
 Phase 4: Output         → Write conversational summary + structured JSON
 ```
