@@ -85,7 +85,7 @@ EXISTING=$(jq 'if type == "array" then . else [] end' "$SESSION_FILE" 2>/dev/nul
 
 # Append new entry (agent fills in actual values)
 LOGGED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-ENTRY_ID="session-${LOGGED_AT}-$(cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | head -c 6)"
+ENTRY_ID="session-${LOGGED_AT}-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
 tmp="$(mktemp)"
 echo "$EXISTING" | jq --arg id "$ENTRY_ID" \
   --arg title "TITLE" \

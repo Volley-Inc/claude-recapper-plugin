@@ -412,6 +412,19 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
 ### 1g. Session log reminder
 
+If `sessionReminder` is `null` (not yet set — existing install that predates this feature), prompt once and save the answer now, then apply it for this run:
+
+> "Would you like a reminder to log your AI coding sessions before each recap? Run `/recap-session` at the end of a Cursor, VS Code, or Claude Code session to capture that work.
+> **yes** — remind me if no sessions are logged when I run /recapper
+> **no** — I'll manage this myself"
+
+```bash
+# If yes:
+tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If no:
+tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
+
 If `sessionReminder` is `true` in config, check whether the session file for `$TARGET_DATE` has any entries:
 
 ```bash
@@ -873,7 +886,7 @@ Map each entry to a contribution:
 ```json
 {
   "id": "{id from entry}",
-  "date": "TARGET_DATE",
+  "date": "{TARGET_DATE}",
   "source": "ai_session",
   "sources": ["ai_session"],
   "type": "{type from entry}",
