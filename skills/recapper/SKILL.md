@@ -41,10 +41,6 @@ Read from the environment — never hardcode values:
 
 MCP-preferred sources (Slack, Linear, Notion, Google Calendar) use their own authentication — env vars are fallbacks only.
 
-## Using with /recap-session
-
-For work done in Cursor, VS Code, Claude Code, or any other AI coding tool, run `/recap-session` at the end of each session to log a structured summary. Those entries are automatically picked up as a 7th source when you run `/recapper`. You can run `/recap-session` multiple times per day — each call appends a new entry to `~/.config/recapper/sessions/YYYY-MM-DD.json`.
-
 ## Workflow
 
 ```
@@ -81,7 +77,7 @@ fi
 RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
 mkdir -p "${HOME}/.config/recapper"
 if [ ! -f "$RECAPPER_CONFIG" ]; then
-  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true,"onboardingComplete":false,"sessionReminder":null}' > "$RECAPPER_CONFIG"
+  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true,"onboardingComplete":false}' > "$RECAPPER_CONFIG"
 fi
 # FIRST_RUN=true if onboarding was never completed (new install or interrupted mid-onboarding)
 # Missing key defaults to true (backward compat — existing configs pre-date this field)
@@ -197,21 +193,6 @@ Do **not** ask this for **never** — Slack will never be fetched.
 - **yes**: remove `"calendar"` from `ignoredSources` if present; mark as available.
 - **skip**: mark as unavailable for this run only; remove `"calendar"` from `ignoredSources` if present.
 - **never**: add `"calendar"` to `ignoredSources`; mark as unavailable.]
-
-**Session Log Reminder:**
-
-> "Would you like a reminder to log your AI coding sessions before each recap? Running `/recap-session` at the end of a Cursor, VS Code, or Claude Code session captures work done in those tools so it shows up in your daily recap.
-> **yes** — remind me if no sessions are logged when I run /recapper
-> **no** — I'll manage this myself"
-
-[Wait for input. Save preference to config:]
-
-```bash
-# If yes:
-tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no:
-tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
 
 If **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
 
@@ -410,31 +391,14 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and re-run the HTTP status check above.]
 
-### 1g. Session log reminder
+### 1g. Announce
 
-If `sessionReminder` is `true` in config, check whether today's session file has any entries:
-
-```bash
-SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
-SESSION_COUNT=$(jq 'length' "$SESSION_FILE" 2>/dev/null || echo "0")
-```
-
-If `SESSION_COUNT` is `0` (file missing or empty), show:
-
-> "💡 No session logs found for today. If you've been working in Cursor, VS Code, or another AI coding tool, run `/recap-session` to capture that work before your recap. Continue anyway? (yes / wait)"
-
-[Wait for input. If **wait**: stop here so the user can run `/recap-session` first. If **yes** or empty: continue.]
-
-If `SESSION_COUNT` is greater than `0`, or `sessionReminder` is `false` or `null`: skip this step silently.
-
-### 1h. Announce
-
-Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Include "AI Sessions" in the list if the session file has entries. Then announce:
+Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Then announce:
 
 > "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
 
-For example, if GitHub and Datadog were skipped but sessions were logged:
-> "Collecting activity for **2026-05-14**. Fetching from Slack, Linear, Notion, Google Calendar, and AI Sessions..."
+For example, if GitHub and Datadog were skipped:
+> "Collecting activity for **2026-05-14**. Fetching from Slack, Linear, Notion, and Google Calendar..."
 
 ---
 
@@ -845,54 +809,6 @@ If **c)**: tell the user to authenticate the Google Calendar integration in Clau
 | `focus_time` | Blocked time, 0 attendees, title: `focus`, `deep work`, `blocked` |
 
 For each event, record: title, start time, duration (minutes), attendee count, classification, whether the user declined (`responseStatus === "declined"` → `attended: false`), and the `htmlLink` field from the event as `url`. Always populate `url`; never leave it null.
-
----
-
-### 2g. AI Sessions
-
-Read today's session log file:
-
-```bash
-SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
-```
-
-If the file doesn't exist or is empty, skip this source silently — no prompt, no error.
-
-If the file has entries, parse them:
-
-```bash
-jq '.[]' "$SESSION_FILE" 2>/dev/null
-```
-
-Each entry has: `title`, `description`, `type`, `category`, `logged_at`.
-
-Map each entry to a contribution:
-
-```json
-{
-  "id": "session-{logged_at}",
-  "date": "YYYY-MM-DD",
-  "source": "ai_session",
-  "sources": ["ai_session"],
-  "type": "{type from entry}",
-  "category": "{category from entry}",
-  "title": "{title from entry}",
-  "description": "{description from entry}",
-  "url": null,
-  "metadata": {
-    "logged_at": "{logged_at from entry}"
-  }
-}
-```
-
-After a successful run, offer to clean up the file:
-
-> "Session log used. Delete `{SESSION_FILE}` to keep things tidy? (yes / no)"
-
-If **yes**:
-```bash
-rm "$SESSION_FILE"
-```
 
 ---
 
