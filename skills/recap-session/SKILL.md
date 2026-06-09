@@ -117,6 +117,7 @@ Each entry in `~/.config/recapper/sessions/YYYY-MM-DD.json`:
 
 ```json
 {
+  "id": "session-2026-06-09T17:32:00Z-a4f3k2",
   "title": "Fixed Datadog session export bug",
   "description": "Identified that freshly entered Datadog keys weren't being exported to the current session before curl verification. Added explicit session exports per key in the Fix-it wizard.",
   "type": "bugfix",

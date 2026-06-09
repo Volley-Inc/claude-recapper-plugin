@@ -412,7 +412,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
 ### 1g. Session log reminder
 
-If `sessionReminder` is `true` in config, check whether today's session file has any entries:
+If `sessionReminder` is `true` in config, check whether the session file for `$TARGET_DATE` has any entries:
 
 ```bash
 SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
@@ -421,7 +421,9 @@ SESSION_COUNT=$(jq 'length' "$SESSION_FILE" 2>/dev/null || echo "0")
 
 If `SESSION_COUNT` is `0` (file missing or empty), show:
 
-> "💡 No session logs found for today. If you've been working in Cursor, VS Code, or another AI coding tool, run `/recap-session` to capture that work before your recap. Continue anyway? (yes / wait)"
+> "💡 No session logs found for **{TARGET_DATE}**. If you've been working in Cursor, VS Code, or another AI coding tool, run `/recap-session{date_arg}` to capture that work before your recap. Continue anyway? (yes / wait)"
+
+Where `{date_arg}` is ` {TARGET_DATE}` if it differs from today, or empty if it is today.
 
 [Wait for input. If **wait**: stop here so the user can run `/recap-session` first. If **yes** or empty: continue.]
 
