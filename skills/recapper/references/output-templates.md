@@ -17,7 +17,10 @@ Full schema and examples for the Impact Archive JSON output.
 
 ## `contributions[]`
 
-One entry per discrete unit of work. Multiple sources can confirm the same contribution — use `sources[]` for that.
+One entry per discrete unit of work.
+
+- `source` — the primary source that produced this entry
+- `sources` — always an array; starts as `["<primary>"]` and expands when deduplication merges the same work found in multiple sources (e.g. a merged PR confirmed by both GitHub events and a Slack message becomes `["github", "slack"]`)
 
 ### Schema
 
@@ -26,7 +29,7 @@ One entry per discrete unit of work. Multiple sources can confirm the same contr
   "id": "string",
   "date": "YYYY-MM-DD",
   "source": "github | linear | slack | notion | datadog | google_calendar",
-  "sources": ["github", "slack"],
+  "sources": ["github"],
   "type": "string",
   "category": "shipped | in_progress | collaborated | incident | planned",
   "title": "string",
