@@ -11,8 +11,11 @@ Log a summary of the current AI coding session to `~/.config/recapper/sessions/Y
 ## Usage
 
 ```
-/recap-session
+/recap-session [date]
 ```
+
+**Arguments:**
+- `date` (optional): Target date in `YYYY-MM-DD` format. Defaults to today. Use this to backfill a session you forgot to log the previous day.
 
 Run this at the end of any AI coding session — Cursor, Claude Code, VS Code, or any IDE where you've been working with an AI assistant. You can run it multiple times per day; each call appends a new entry.
 
@@ -20,10 +23,10 @@ Run this at the end of any AI coding session — Cursor, Claude Code, VS Code, o
 
 ## Workflow
 
-### Step 1: Resolve today's session file path
+### Step 1: Resolve session file path
 
 ```bash
-SESSION_DATE=$(date +%Y-%m-%d)
+SESSION_DATE="${1:-$(date +%Y-%m-%d)}"
 SESSION_DIR="${HOME}/.config/recapper/sessions"
 SESSION_FILE="${SESSION_DIR}/${SESSION_DATE}.json"
 mkdir -p "$SESSION_DIR"
@@ -78,13 +81,15 @@ fi
 
 # Append new entry (agent fills in actual values)
 LOGGED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+ENTRY_ID="session-${LOGGED_AT}-$(cat /dev/urandom | LC_ALL=C tr -dc 'a-z0-9' | head -c 6)"
 tmp="$(mktemp)"
-echo "$EXISTING" | jq --arg title "TITLE" \
+echo "$EXISTING" | jq --arg id "$ENTRY_ID" \
+  --arg title "TITLE" \
   --arg description "DESCRIPTION" \
   --arg type "TYPE" \
   --arg category "CATEGORY" \
   --arg logged_at "$LOGGED_AT" \
-  '. += [{title: $title, description: $description, type: $type, category: $category, logged_at: $logged_at}]' \
+  '. += [{id: $id, title: $title, description: $description, type: $type, category: $category, logged_at: $logged_at}]' \
   > "$tmp" && mv "$tmp" "$SESSION_FILE"
 ```
 

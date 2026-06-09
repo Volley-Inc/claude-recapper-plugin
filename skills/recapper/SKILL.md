@@ -850,7 +850,7 @@ For each event, record: title, start time, duration (minutes), attendee count, c
 
 ### 2g. AI Sessions
 
-Read today's session log file:
+Read the session log file for `$TARGET_DATE`:
 
 ```bash
 SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
@@ -864,14 +864,14 @@ If the file has entries, parse them:
 jq '.[]' "$SESSION_FILE" 2>/dev/null
 ```
 
-Each entry has: `title`, `description`, `type`, `category`, `logged_at`.
+Each entry has: `id`, `title`, `description`, `type`, `category`, `logged_at`.
 
 Map each entry to a contribution:
 
 ```json
 {
-  "id": "session-{logged_at}",
-  "date": "YYYY-MM-DD",
+  "id": "{id from entry}",
+  "date": "TARGET_DATE",
   "source": "ai_session",
   "sources": ["ai_session"],
   "type": "{type from entry}",
@@ -883,15 +883,6 @@ Map each entry to a contribution:
     "logged_at": "{logged_at from entry}"
   }
 }
-```
-
-After a successful run, offer to clean up the file:
-
-> "Session log used. Delete `{SESSION_FILE}` to keep things tidy? (yes / no)"
-
-If **yes**:
-```bash
-rm "$SESSION_FILE"
 ```
 
 ---
@@ -987,6 +978,17 @@ Print the full JSON in a fenced code block. See [references/output-templates.md]
     }
   ]
 }
+```
+
+### Phase 4 cleanup
+
+After both the summary and JSON have been written successfully, if a session log file was read in Phase 2g, offer to delete it:
+
+> "Session log used. Delete `~/.config/recapper/sessions/{TARGET_DATE}.json` to keep things tidy? (yes / no)"
+
+If **yes**:
+```bash
+rm "${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
 ```
 
 ---
