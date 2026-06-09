@@ -27,6 +27,13 @@ Run this at the end of any AI coding session — Cursor, Claude Code, VS Code, o
 
 ```bash
 SESSION_DATE="${1:-$(date +%Y-%m-%d)}"
+# Validate format and that the date is real (mirrors /recapper validation)
+PARSED=$(date -d "$SESSION_DATE" +%Y-%m-%d 2>/dev/null || \
+         date -j -f "%Y-%m-%d" "$SESSION_DATE" +%Y-%m-%d 2>/dev/null)
+if [[ ! "$SESSION_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ "$PARSED" != "$SESSION_DATE" ]; then
+  echo "Error: invalid date '$SESSION_DATE'. Use YYYY-MM-DD — e.g. $(date +%Y-%m-%d)"
+  exit 1
+fi
 SESSION_DIR="${HOME}/.config/recapper/sessions"
 SESSION_FILE="${SESSION_DIR}/${SESSION_DATE}.json"
 mkdir -p "$SESSION_DIR"
