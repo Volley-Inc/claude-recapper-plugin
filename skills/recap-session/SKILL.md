@@ -105,7 +105,9 @@ Tell the user:
 
 > "✅ Session logged to `{SESSION_FILE}`.
 >
-> Run `/recapper` at end of day to include this in your daily recap. You can run `/recap-session` again after your next session to add more entries."
+> Run `/recapper{date_arg}` to include this in your recap. You can run `/recap-session` again after your next session to add more entries."
+
+Where `{date_arg}` is ` {SESSION_DATE}` if `SESSION_DATE` differs from today's date, or empty if it is today. For example, if backfilling yesterday: "Run `/recapper 2026-06-08`".
 
 ---
 
