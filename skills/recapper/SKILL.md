@@ -1,7 +1,7 @@
 ---
 name: recapper
 description: Use when the user wants to recap their day, collect daily work activity, generate a daily summary, or populate their Impact Archive. Collects activity from Slack, Linear, GitHub, Notion, Datadog, and Google Calendar and outputs a conversational journal summary plus structured JSON. Triggers on "recap my day", "daily recap", "what did I do today", "impact archive", "recapper", or "/recapper".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Daily Activity Recapper
