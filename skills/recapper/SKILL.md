@@ -418,6 +418,8 @@ If `sessionReminder` is `null` (not yet set — existing install that predates t
 > **yes** — remind me if no sessions are logged when I run /recapper
 > **no** — I'll manage this myself"
 
+[Wait for input. Save preference to config:]
+
 ```bash
 # If yes:
 tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
