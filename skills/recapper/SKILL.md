@@ -236,7 +236,7 @@ tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources += [$src] | .ignoredSour
 tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
-After all six sources are answered, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
+After all six sources are answered **and the Session Log Reminder preference is saved**, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
 
 ```bash
 tmp="$(mktemp)" && jq '.onboardingComplete = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
@@ -442,7 +442,7 @@ Where `{date_arg}` is ` {TARGET_DATE}` if it differs from today, or empty if it 
 
 [Wait for input. If **wait**: stop here so the user can run `/recap-session` first. If **yes** or empty: continue.]
 
-If `SESSION_COUNT` is greater than `0`, or `sessionReminder` is `false` or `null`: skip this step silently.
+If `SESSION_COUNT` is greater than `0`, or `sessionReminder` is `false`: skip this step silently. (The `null` case is handled above and will not reach this point.)
 
 ### 1h. Announce
 
@@ -917,7 +917,7 @@ The same work may surface in multiple sources (e.g., a merged PR appears in GitH
 
 ### 3b. Classify each item
 
-Assign a `category` to every contribution:
+Assign a `category` to every contribution **except `ai_session` source entries** — those already have a user-confirmed category from `/recap-session` and must not be reclassified:
 
 | Category | Criteria |
 |---|---|
