@@ -213,7 +213,7 @@ tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $i
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
-**Session Log Reminder:**
+**Session Log Reminder** (only if `sessionReminder` is `null` — skip if it's already set from a prior interrupted run):
 
 > "Would you like a reminder to log your AI coding sessions before each recap? Running `/recap-session` at the end of a Cursor, VS Code, or Claude Code session captures work done in those tools so it shows up in your daily recap.
 > **yes** — remind me if no sessions are logged when I run /recapper

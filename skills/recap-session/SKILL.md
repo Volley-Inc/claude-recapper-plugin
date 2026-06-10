@@ -79,7 +79,14 @@ Review the current conversation and produce a structured summary. Ask the user t
 Read the existing file (if it exists) and append the new entry:
 
 ```bash
-# Read existing entries — fall back to [] if file is missing, empty, invalid JSON, or not an array
+# Read existing entries — fall back to [] if file is missing, empty, or invalid JSON
+# If the file exists and contains valid JSON but is NOT an array, warn before overwriting
+if [ -f "$SESSION_FILE" ]; then
+  FILE_TYPE=$(jq -r 'type' "$SESSION_FILE" 2>/dev/null)
+  if [ "$FILE_TYPE" != "array" ] && [ -n "$FILE_TYPE" ]; then
+    echo "⚠️ Warning: $SESSION_FILE contains valid JSON but is not an array (found: $FILE_TYPE). It will be replaced with a new session array."
+  fi
+fi
 EXISTING=$(jq 'if type == "array" then . else [] end' "$SESSION_FILE" 2>/dev/null || echo "[]")
 [ -z "$EXISTING" ] && EXISTING="[]"
 
