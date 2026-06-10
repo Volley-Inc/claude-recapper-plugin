@@ -878,7 +878,7 @@ If the file doesn't exist or is empty, skip this source silently — no prompt, 
 If the file has entries, parse them:
 
 ```bash
-jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null
+jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null || true
 ```
 
 Each entry has: `id`, `title`, `description`, `type`, `category`, `logged_at`.
@@ -1005,7 +1005,7 @@ After both the summary and JSON have been written successfully, if a session log
 
 If **yes**:
 ```bash
-rm "${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
+rm -f "${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
 ```
 
 ---

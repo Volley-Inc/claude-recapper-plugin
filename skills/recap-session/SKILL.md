@@ -87,7 +87,7 @@ EXISTING=$(jq 'if type == "array" then . else [] end' "$SESSION_FILE" 2>/dev/nul
 LOGGED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 ENTRY_ID="session-${LOGGED_AT}-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
 tmp="$(mktemp)"
-echo "$EXISTING" | jq --arg id "$ENTRY_ID" \
+printf '%s\n' "$EXISTING" | jq --arg id "$ENTRY_ID" \
   --arg title "TITLE" \
   --arg description "DESCRIPTION" \
   --arg type "TYPE" \
