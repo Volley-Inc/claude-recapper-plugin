@@ -915,6 +915,8 @@ The same work may surface in multiple sources (e.g., a merged PR appears in GitH
 - Matching PR/issue titles with high similarity
 - Consolidate into a single contribution entry with `sources: ["github", "slack"]`
 
+**`ai_session` entries are never deduplicated** — each `/recap-session` entry is intentionally distinct and must be preserved as-is. Do not merge `ai_session` entries with each other or with entries from any other source.
+
 ### 3b. Classify each item
 
 Assign a `category` to every contribution **except `ai_session` source entries** — those already have a user-confirmed category from `/recap-session` and must not be reclassified:
