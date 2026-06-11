@@ -1005,6 +1005,8 @@ After both the summary and JSON have been written successfully, if a session log
 
 > "Session log used. Delete `~/.config/recapper/sessions/{TARGET_DATE}.json` to keep things tidy? (yes / no)"
 
+[Wait for input.]
+
 If **yes**:
 ```bash
 rm -f "${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
