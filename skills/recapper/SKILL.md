@@ -41,11 +41,15 @@ Read from the environment — never hardcode values:
 
 MCP-preferred sources (Slack, Linear, Notion, Google Calendar) use their own authentication — env vars are fallbacks only.
 
+## Using with /recap-session
+
+For work done in Cursor, VS Code, Claude Code, or any other AI coding tool, run `/recap-session` at the end of each session to log a structured summary. Those entries are automatically picked up as a 7th source when you run `/recapper`. You can run `/recap-session` multiple times per day — each call appends a new entry to `~/.config/recapper/sessions/YYYY-MM-DD.json`.
+
 ## Workflow
 
 ```
 Phase 1: Setup          → Resolve date, check config, prompt for anything missing
-Phase 2: Parallel Fetch → Collect from all 6 sources concurrently
+Phase 2: Parallel Fetch → Collect from up to 7 sources concurrently (Slack, Linear, GitHub, Notion, Datadog, Google Calendar, AI Sessions)
 Phase 3: Synthesize     → Deduplicate, categorize, rank by significance
 Phase 4: Output         → Write conversational summary + structured JSON
 ```
@@ -77,7 +81,7 @@ fi
 RECAPPER_CONFIG="${HOME}/.config/recapper/config.json"
 mkdir -p "${HOME}/.config/recapper"
 if [ ! -f "$RECAPPER_CONFIG" ]; then
-  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true,"onboardingComplete":false}' > "$RECAPPER_CONFIG"
+  echo '{"ignoredSources":[],"calendarIds":[],"slackIncludeDMs":true,"onboardingComplete":false,"sessionReminder":null}' > "$RECAPPER_CONFIG"
 fi
 # FIRST_RUN=true if onboarding was never completed (new install or interrupted mid-onboarding)
 # Missing key defaults to true (backward compat — existing configs pre-date this field)
@@ -209,6 +213,21 @@ tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $i
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
+**Session Log Reminder** (only if `sessionReminder` is `null` — skip if it's already set from a prior interrupted run):
+
+> "Would you like a reminder to log your AI coding sessions before each recap? Running `/recap-session` at the end of a Cursor, VS Code, or Claude Code session captures work done in those tools so it shows up in your daily recap.
+> **yes** — remind me if no sessions are logged when I run /recapper
+> **no** — I'll manage this myself"
+
+[Wait for input. Save preference to config:]
+
+```bash
+# If yes:
+tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If no:
+tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
+
 To add/remove a source from `ignoredSources` (for reference above):
 ```bash
 # Add:
@@ -217,7 +236,7 @@ tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources += [$src] | .ignoredSour
 tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
-After all six sources are answered, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
+After all six sources are answered **and the Session Log Reminder preference is saved**, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
 
 ```bash
 tmp="$(mktemp)" && jq '.onboardingComplete = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
@@ -391,14 +410,55 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and re-run the HTTP status check above.]
 
-### 1g. Announce
+### 1g. Session log reminder
 
-Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Then announce:
+If `sessionReminder` is `null` (not yet set — existing install that predates this feature), prompt once and save the answer now, then apply it for this run:
+
+> "Would you like a reminder to log your AI coding sessions before each recap? Run `/recap-session` at the end of a Cursor, VS Code, or Claude Code session to capture that work.
+> **yes** — remind me if no sessions are logged when I run /recapper
+> **no** — I'll manage this myself"
+
+[Wait for input. Save preference to config:]
+
+```bash
+# If yes:
+tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If no:
+tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+```
+
+If `sessionReminder` is `true` in config, check whether the session file for `$TARGET_DATE` has any entries:
+
+```bash
+SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
+SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2>/dev/null || echo "0")
+```
+
+If `SESSION_COUNT` is `0` (file missing or empty), show:
+
+> "💡 No session logs found for **{TARGET_DATE}**. If you've been working in Cursor, VS Code, or another AI coding tool, run `/recap-session{date_arg}` to capture that work before your recap. Continue anyway? (yes / wait)"
+
+Where `{date_arg}` is ` {TARGET_DATE}` if it differs from today, or empty if it is today.
+
+[Wait for input. If **wait**: stop here so the user can run `/recap-session` first. If **yes** or empty: continue.]
+
+If `SESSION_COUNT` is greater than `0`, or `sessionReminder` is `false`: skip this step silently. (The `null` case is handled above and will not reach this point.)
+
+### 1h. Announce
+
+Check for session entries independently of the `sessionReminder` preference (users may have run `/recap-session` even if reminders are off):
+
+```bash
+SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
+SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2>/dev/null || echo "0")
+```
+
+Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Include "AI Sessions" in the list if `SESSION_COUNT` is greater than `0`. Then announce:
 
 > "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
 
-For example, if GitHub and Datadog were skipped:
-> "Collecting activity for **2026-05-14**. Fetching from Slack, Linear, Notion, and Google Calendar..."
+For example, if GitHub and Datadog were skipped but sessions were logged:
+> "Collecting activity for **2026-05-14**. Fetching from Slack, Linear, Notion, Google Calendar, and AI Sessions..."
 
 ---
 
@@ -812,6 +872,50 @@ For each event, record: title, start time, duration (minutes), attendee count, c
 
 ---
 
+### 2g. AI Sessions
+
+Read the session log file for `$TARGET_DATE`:
+
+```bash
+SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
+```
+
+Check entry count first, then set the flag and parse only if entries exist:
+
+```bash
+SESSIONS_FOUND=false
+SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2>/dev/null || echo "0")
+if [ "$SESSION_COUNT" -gt 0 ]; then
+  SESSIONS_FOUND=true
+  jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null || true
+fi
+```
+
+If `SESSION_COUNT` is `0` (file missing, empty, or non-array), skip this source silently — no prompt, no error.
+
+Each entry has: `id`, `title`, `description`, `type`, `category`, `logged_at`.
+
+Map each entry to a contribution:
+
+```json
+{
+  "id": "{id from entry}",
+  "date": "{TARGET_DATE}",
+  "source": "ai_session",
+  "sources": ["ai_session"],
+  "type": "{type from entry}",
+  "category": "{category from entry}",
+  "title": "{title from entry}",
+  "description": "{description from entry}",
+  "url": null,
+  "metadata": {
+    "logged_at": "{logged_at from entry}"
+  }
+}
+```
+
+---
+
 ## Phase 3: Synthesize
 
 After all fetches complete:
@@ -823,9 +927,11 @@ The same work may surface in multiple sources (e.g., a merged PR appears in GitH
 - Matching PR/issue titles with high similarity
 - Consolidate into a single contribution entry with `sources: ["github", "slack"]`
 
+**`ai_session` entries are never deduplicated** — check `source === "ai_session"` before applying any dedup logic and skip those entries entirely. Each `/recap-session` entry is intentionally distinct; do not merge them with each other or with entries from any other source, even if titles appear similar.
+
 ### 3b. Classify each item
 
-Assign a `category` to every contribution:
+Assign a `category` to every contribution **except `ai_session` source entries** — check `source === "ai_session"` and pass those through unchanged. Their `category` field was confirmed by the user in `/recap-session` and must not be reclassified:
 
 | Category | Criteria |
 |---|---|
@@ -903,6 +1009,19 @@ Print the full JSON in a fenced code block. See [references/output-templates.md]
     }
   ]
 }
+```
+
+### Phase 4 cleanup
+
+After both the summary and JSON have been written successfully, if `SESSIONS_FOUND=true` (set in Phase 2g when entries were actually parsed), offer to delete it:
+
+> "Session log used. Delete `~/.config/recapper/sessions/{TARGET_DATE}.json` to keep things tidy? (yes / no)"
+
+[Wait for input.]
+
+If **yes**:
+```bash
+rm -f "${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
 ```
 
 ---
