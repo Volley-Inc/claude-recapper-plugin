@@ -446,7 +446,14 @@ If `SESSION_COUNT` is greater than `0`, or `sessionReminder` is `false`: skip th
 
 ### 1h. Announce
 
-Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Include "AI Sessions" in the list if the session file has entries. Then announce:
+Check for session entries independently of the `sessionReminder` preference (users may have run `/recap-session` even if reminders are off):
+
+```bash
+SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
+SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2>/dev/null || echo "0")
+```
+
+Build the source list from only the sources not already marked `unavailable` after steps 1b–1f. Include "AI Sessions" in the list if `SESSION_COUNT` is greater than `0`. Then announce:
 
 > "Collecting activity for **{TARGET_DATE}**. Fetching from {comma-separated list of available sources}..."
 
@@ -873,12 +880,13 @@ Read the session log file for `$TARGET_DATE`:
 SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
 ```
 
-If the file doesn't exist or is empty, skip this source silently — no prompt, no error.
+If the file doesn't exist or is empty, skip this source silently — no prompt, no error. Set `SESSIONS_FOUND=false`.
 
-If the file has entries, parse them:
+If the file has entries, parse them and set `SESSIONS_FOUND=true`:
 
 ```bash
 jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null || true
+SESSIONS_FOUND=true
 ```
 
 Each entry has: `id`, `title`, `description`, `type`, `category`, `logged_at`.
@@ -915,11 +923,11 @@ The same work may surface in multiple sources (e.g., a merged PR appears in GitH
 - Matching PR/issue titles with high similarity
 - Consolidate into a single contribution entry with `sources: ["github", "slack"]`
 
-**`ai_session` entries are never deduplicated** — each `/recap-session` entry is intentionally distinct and must be preserved as-is. Do not merge `ai_session` entries with each other or with entries from any other source.
+**`ai_session` entries are never deduplicated** — check `source === "ai_session"` before applying any dedup logic and skip those entries entirely. Each `/recap-session` entry is intentionally distinct; do not merge them with each other or with entries from any other source, even if titles appear similar.
 
 ### 3b. Classify each item
 
-Assign a `category` to every contribution **except `ai_session` source entries** — those already have a user-confirmed category from `/recap-session` and must not be reclassified:
+Assign a `category` to every contribution **except `ai_session` source entries** — check `source === "ai_session"` and pass those through unchanged. Their `category` field was confirmed by the user in `/recap-session` and must not be reclassified:
 
 | Category | Criteria |
 |---|---|
@@ -1001,7 +1009,7 @@ Print the full JSON in a fenced code block. See [references/output-templates.md]
 
 ### Phase 4 cleanup
 
-After both the summary and JSON have been written successfully, if a session log file was read in Phase 2g, offer to delete it:
+After both the summary and JSON have been written successfully, if `SESSIONS_FOUND=true` (set in Phase 2g when entries were actually parsed), offer to delete it:
 
 > "Session log used. Delete `~/.config/recapper/sessions/{TARGET_DATE}.json` to keep things tidy? (yes / no)"
 

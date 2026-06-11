@@ -88,23 +88,25 @@ if [ -f "$SESSION_FILE" ]; then
   fi
 fi
 EXISTING=$(jq 'if type == "array" then . else [] end' "$SESSION_FILE" 2>/dev/null || echo "[]")
-[ -z "$EXISTING" ] && EXISTING="[]"
 
-# Append new entry (agent fills in actual values)
+# Set these variables to the confirmed values before running the append command below
+CONFIRMED_TITLE="<title confirmed in Step 2>"
+CONFIRMED_DESCRIPTION="<description confirmed in Step 2>"
+CONFIRMED_TYPE="<type confirmed in Step 2>"
+CONFIRMED_CATEGORY="<category confirmed in Step 2>"
+
 LOGGED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 ENTRY_ID="session-${LOGGED_AT}-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
 tmp="$(mktemp)"
 printf '%s\n' "$EXISTING" | jq --arg id "$ENTRY_ID" \
-  --arg title "TITLE" \
-  --arg description "DESCRIPTION" \
-  --arg type "TYPE" \
-  --arg category "CATEGORY" \
+  --arg title "$CONFIRMED_TITLE" \
+  --arg description "$CONFIRMED_DESCRIPTION" \
+  --arg type "$CONFIRMED_TYPE" \
+  --arg category "$CONFIRMED_CATEGORY" \
   --arg logged_at "$LOGGED_AT" \
   '. += [{id: $id, title: $title, description: $description, type: $type, category: $category, logged_at: $logged_at}]' \
   > "$tmp" && mv "$tmp" "$SESSION_FILE"
 ```
-
-Replace `TITLE`, `DESCRIPTION`, `TYPE`, and `CATEGORY` with the confirmed values.
 
 ### Step 4: Confirm
 
