@@ -880,14 +880,18 @@ Read the session log file for `$TARGET_DATE`:
 SESSION_FILE="${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
 ```
 
-If the file doesn't exist or is empty, skip this source silently — no prompt, no error. Set `SESSIONS_FOUND=false`.
-
-If the file has entries, parse them and set `SESSIONS_FOUND=true`:
+Check entry count first, then set the flag and parse only if entries exist:
 
 ```bash
-jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null || true
-SESSIONS_FOUND=true
+SESSIONS_FOUND=false
+SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2>/dev/null || echo "0")
+if [ "$SESSION_COUNT" -gt 0 ]; then
+  SESSIONS_FOUND=true
+  jq 'if type == "array" then .[] else empty end' "$SESSION_FILE" 2>/dev/null || true
+fi
 ```
+
+If `SESSION_COUNT` is `0` (file missing, empty, or non-array), skip this source silently — no prompt, no error.
 
 Each entry has: `id`, `title`, `description`, `type`, `category`, `logged_at`.
 
