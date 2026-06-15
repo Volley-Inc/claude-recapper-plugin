@@ -971,6 +971,8 @@ Within each category, prefer items with longer descriptions or cross-source conf
 
 ## Phase 4: Output
 
+> **Note:** Carry `SESSIONS_FOUND` forward from Phase 2g — you will need it in the cleanup step below.
+
 ### Part 1: Conversational Summary
 
 Write 2–4 paragraphs in first-person, past tense, suitable for a journal entry. Rules:

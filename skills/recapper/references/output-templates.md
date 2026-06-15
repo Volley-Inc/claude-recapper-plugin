@@ -28,7 +28,7 @@ One entry per discrete unit of work.
 {
   "id": "string",
   "date": "YYYY-MM-DD",
-  "source": "github | linear | slack | notion | datadog | google_calendar",
+  "source": "github | linear | slack | notion | datadog | google_calendar | ai_session",
   "sources": ["github"],
   "type": "string",
   "category": "shipped | in_progress | collaborated | incident | planned",
