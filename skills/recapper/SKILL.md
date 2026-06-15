@@ -140,7 +140,8 @@ If **yes** or **skip**, immediately follow up with the DM preference (skip users
 
 > "**Include Direct Messages?** Should DMs appear in your Slack recap?
 > **yes** — include DMs alongside channel messages
-> **no** — channel messages only (recommended for work recaps)"
+> **no** — channel messages only (recommended for work recaps)
+> **ask** — prompt me each time I run /recapper"
 
 [Wait for input. Save DM preference to config:]
 
@@ -149,6 +150,8 @@ If **yes** or **skip**, immediately follow up with the DM preference (skip users
 tmp="$(mktemp)" && jq '.slackIncludeDMs = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 # If no to DMs:
 tmp="$(mktemp)" && jq '.slackIncludeDMs = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+# If ask each time:
+tmp="$(mktemp)" && jq '.slackIncludeDMs = "ask"' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
 Do **not** ask this for **never** — Slack will never be fetched.
@@ -472,12 +475,20 @@ For sources that are available: run independent fetches concurrently where possi
 
 Read the DM preference from config:
 ```bash
-SLACK_INCLUDE_DMS=$(jq -r 'if .slackIncludeDMs == false then "false" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null || echo "true")
+SLACK_INCLUDE_DMS=$(jq -r 'if .slackIncludeDMs == false then "false" elif .slackIncludeDMs == "ask" then "ask" else "true" end' "$RECAPPER_CONFIG" 2>/dev/null || echo "true")
 ```
 
+If `SLACK_INCLUDE_DMS` is `"ask"`, prompt the user now:
+
+> "**Include Direct Messages in today's recap?**
+> **yes** — include DMs alongside channel messages
+> **no** — channel messages only"
+
+[Wait for input. Apply for this run only — do not save to config.]
+
 **Preferred: MCP**
-- If `SLACK_INCLUDE_DMS` is `true`: use `mcp__claude_ai_Slack__slack_search_public_and_private`
-- If `SLACK_INCLUDE_DMS` is `false`: use `mcp__claude_ai_Slack__slack_search_public` (channel messages only)
+- If `SLACK_INCLUDE_DMS` is `true` (or user answered yes above): use `mcp__claude_ai_Slack__slack_search_public_and_private`
+- If `SLACK_INCLUDE_DMS` is `false` (or user answered no above): use `mcp__claude_ai_Slack__slack_search_public` (channel messages only)
 
 Search for messages sent by the user on the target date. Use these queries:
 - `from:@me after:{TARGET_DATE} before:{NEXT_DAY}` — messages sent
