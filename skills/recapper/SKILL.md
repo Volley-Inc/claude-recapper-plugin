@@ -484,11 +484,11 @@ If `SLACK_INCLUDE_DMS` is `"ask"`, prompt the user now:
 > **yes** — include DMs alongside channel messages
 > **no** — channel messages only"
 
-[Wait for input. Apply for this run only — do not save to config.]
+[Wait for input. Resolve `SLACK_INCLUDE_DMS` to `"true"` or `"false"` based on the answer — do not save to config. All subsequent steps use this resolved value.]
 
 **Preferred: MCP**
-- If `SLACK_INCLUDE_DMS` is `true` (or user answered yes above): use `mcp__claude_ai_Slack__slack_search_public_and_private`
-- If `SLACK_INCLUDE_DMS` is `false` (or user answered no above): use `mcp__claude_ai_Slack__slack_search_public` (channel messages only)
+- If `SLACK_INCLUDE_DMS` is `"true"`: use `mcp__claude_ai_Slack__slack_search_public_and_private`
+- If `SLACK_INCLUDE_DMS` is `"false"`: use `mcp__claude_ai_Slack__slack_search_public` (channel messages only)
 
 Search for messages sent by the user on the target date. Use these queries:
 - `from:@me after:{TARGET_DATE} before:{NEXT_DAY}` — messages sent
