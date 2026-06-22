@@ -125,19 +125,16 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 > **2** — exclude this run, include automatically next run
 > **3** — never include this source"
 
-Prompt for each source **individually**, applying the choice immediately before moving to the next. This ensures choices are persisted even if onboarding is interrupted. **Prompt all six sources regardless of their current `ignoredSources` status** — this is the user's opportunity to change their mind from any prior partial run. Applying **1** or **2** immediately overrides step 1b's earlier unavailable marking for that source.
+Prompt for each source **individually**. **Prompt all six sources regardless of their current `ignoredSources` status** — this is the user's opportunity to change their mind from any prior partial run. Track all config changes in context — they will be written together in a single bash command at the end of onboarding. Do **not** write to `$RECAPPER_CONFIG` during these prompts. Answer **1** or **2** overrides step 1b's unavailable marking for that source (in-memory only — no bash required).
 
 **Slack:**
 
-> "**Slack:**
-> 1) Include every run
-> 2) Skip this run
-> 3) Never include"
+> "**Slack** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **1**: remove `"slack"` from `ignoredSources` if present; mark as available.
-- **2**: mark as unavailable for this run only; remove `"slack"` from `ignoredSources` if present.
-- **3**: add `"slack"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"slack"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"slack"` for removal from `ignoredSources`.
+- **3**: track `"slack"` for addition to `ignoredSources`; mark as unavailable.]
 
 If **1** or **2**, immediately follow up with the DM preference (skip users will have Slack included on their next run and need this set):
 
@@ -146,78 +143,54 @@ If **1** or **2**, immediately follow up with the DM preference (skip users will
 > 2) No — channel messages only (recommended for work recaps)
 > 3) Ask me each time I run /recapper"
 
-[Wait for input. Save DM preference to config:]
-
-```bash
-# If yes to DMs:
-tmp="$(mktemp)" && jq '.slackIncludeDMs = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no to DMs:
-tmp="$(mktemp)" && jq '.slackIncludeDMs = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If ask each time:
-tmp="$(mktemp)" && jq '.slackIncludeDMs = "ask"' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
+[Wait for input. Track the DM preference — do not write to config yet.]
 
 Do **not** ask this for **3** — Slack will never be fetched.
 
 **Linear:**
 
-> "**Linear:**
-> 1) Include every run
-> 2) Skip this run
-> 3) Never include"
+> "**Linear** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **1**: remove `"linear"` from `ignoredSources` if present; mark as available.
-- **2**: mark as unavailable for this run only; remove `"linear"` from `ignoredSources` if present.
-- **3**: add `"linear"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"linear"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"linear"` for removal from `ignoredSources`.
+- **3**: track `"linear"` for addition to `ignoredSources`; mark as unavailable.]
 
 **GitHub:**
 
-> "**GitHub:**
-> 1) Include every run
-> 2) Skip this run
-> 3) Never include"
+> "**GitHub** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **1**: remove `"github"` from `ignoredSources` if present; mark as available.
-- **2**: mark as unavailable for this run only; remove `"github"` from `ignoredSources` if present.
-- **3**: add `"github"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"github"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"github"` for removal from `ignoredSources`.
+- **3**: track `"github"` for addition to `ignoredSources`; mark as unavailable.]
 
 **Notion:**
 
-> "**Notion:**
-> 1) Include every run
-> 2) Skip this run
-> 3) Never include"
+> "**Notion** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **1**: remove `"notion"` from `ignoredSources` if present; mark as available.
-- **2**: mark as unavailable for this run only; remove `"notion"` from `ignoredSources` if present.
-- **3**: add `"notion"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"notion"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"notion"` for removal from `ignoredSources`.
+- **3**: track `"notion"` for addition to `ignoredSources`; mark as unavailable.]
 
 **Datadog:**
 
-> "**Datadog:**
-> 1) Include every run
-> 2) Skip this run
-> 3) Never include"
+> "**Datadog** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **1**: remove `"datadog"` from `ignoredSources` if present; mark as available.
-- **2**: mark as unavailable for this run only; remove `"datadog"` from `ignoredSources` if present.
-- **3**: add `"datadog"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"datadog"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"datadog"` for removal from `ignoredSources`.
+- **3**: track `"datadog"` for addition to `ignoredSources`; mark as unavailable.]
 
 **Google Calendar:**
 
-> "**Google Calendar:**
-> 1) Include every run
-> 2) Skip this run
-> 3) Never include"
+> "**Google Calendar** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **1**: remove `"calendar"` from `ignoredSources` if present; mark as available.
-- **2**: mark as unavailable for this run only; remove `"calendar"` from `ignoredSources` if present.
-- **3**: add `"calendar"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"calendar"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"calendar"` for removal from `ignoredSources`.
+- **3**: track `"calendar"` for addition to `ignoredSources`; mark as unavailable.]
 
 If **1** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
 
@@ -226,11 +199,7 @@ If **1** for Google Calendar and the Calendar MCP is available, call `mcp__claud
 >
 > Which would you like to include in your recaps? Enter the numbers separated by commas (or press Enter to use your primary calendar only):"
 
-[Wait for input. Parse the numbers and save the selected calendar IDs to config:]
-
-```bash
-tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $ids' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
+[Wait for input. Parse the numbers and track the selected calendar IDs — do not write to config yet.]
 
 If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
 
@@ -240,28 +209,25 @@ If the user presses Enter without selecting, save only the primary calendar ID. 
 > 1) Yes — remind me if no sessions are logged when I run /recapper
 > 2) No — I'll manage this myself"
 
-[Wait for input. Save preference to config:]
+[Wait for input. Track the session reminder preference — do not write to config yet.]
+
+After all six sources are answered **and the Session Log Reminder preference is noted**, write all onboarding choices to config in **one consolidated bash command** — this is the only config write during onboarding. Substitute the actual values from the answers collected above:
 
 ```bash
-# If yes:
-tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no:
-tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+tmp="$(mktemp)" && jq \
+  --argjson ignoredSources '[]' \
+  --arg slackIncludeDMs "true" \
+  --argjson calendarIds '[]' \
+  --argjson sessionReminder 'true' \
+  '.ignoredSources = $ignoredSources | .slackIncludeDMs = (if $slackIncludeDMs == "true" then true elif $slackIncludeDMs == "false" then false else $slackIncludeDMs end) | .calendarIds = $calendarIds | .sessionReminder = $sessionReminder | .onboardingComplete = true' \
+  "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
-To add/remove a source from `ignoredSources` (for reference above):
-```bash
-# Add:
-tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# Remove:
-tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
-
-After all six sources are answered **and the Session Log Reminder preference is saved**, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
-
-```bash
-tmp="$(mktemp)" && jq '.onboardingComplete = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
+Substitute these values:
+- `$ignoredSources` — JSON array of source slugs that received answer **3** (e.g., `'["datadog","calendar"]'`). Sources with answers **1** or **2** are excluded from this list.
+- `$slackIncludeDMs` — the DM preference as a string: `"true"`, `"false"`, or `"ask"`. If Slack was answered **3**, read the existing value: `jq -r '.slackIncludeDMs // "true" | tostring' "$RECAPPER_CONFIG"`.
+- `$calendarIds` — JSON array of selected calendar IDs (e.g., `'["primary","cal123@group.calendar.google.com"]'`). Use `'[]'` if Calendar was not answered **1**.
+- `$sessionReminder` — `true` or `false` (JSON boolean, no quotes).
 
 Then continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
