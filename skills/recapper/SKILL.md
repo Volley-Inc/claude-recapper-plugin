@@ -219,7 +219,7 @@ Do **not** ask this for **3** — Slack will never be fetched.
 - **2**: mark as unavailable for this run only; remove `"calendar"` from `ignoredSources` if present.
 - **3**: add `"calendar"` to `ignoredSources`; mark as unavailable.]
 
-If **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
+If **1** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
 
 > "You have access to the following calendars:
 > [list each calendar with a number, e.g. "1. Work (primary)", "2. Team Meetings", "3. Personal"]
@@ -554,7 +554,7 @@ If **3**: ask the user to choose:
 
 [Wait for input. If empty: mark Slack as `unavailable` and continue. If **1**: mark as `unavailable` and continue — the rest of this recap will run without Slack; user can re-run after authenticating. If **2**: proceed below.]
 
-If user chose **B**, re-collect both values — since REST already failed, any existing values may be invalid:
+If user chose **2**, re-collect both values — since REST already failed, any existing values may be invalid:
 
 > "Your Slack User ID (open your profile → **•••** → **Copy member ID**, looks like `U012AB3CD`):
 > Paste here (or press Enter to skip Slack):"
