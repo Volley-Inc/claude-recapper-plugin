@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# recap-session — log an AI coding session to ~/.config/recapper/sessions/YYYY-MM-DD.json
+# Works from any terminal, regardless of IDE (Cursor, VS Code, Claude Code, etc.)
+# Entries are automatically picked up by /recapper when you run your daily recap.
+#
+# Usage:
+#   recap-session           # log a session for today
+#   recap-session 2026-06-21  # backfill a session for a specific date
+
+set -euo pipefail
+
+SESSION_DATE="${1:-$(date +%Y-%m-%d)}"
+PARSED=$(date -d "$SESSION_DATE" +%Y-%m-%d 2>/dev/null || \
+         date -j -f "%Y-%m-%d" "$SESSION_DATE" +%Y-%m-%d 2>/dev/null || true)
+if [[ ! "$SESSION_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || [ "$PARSED" != "$SESSION_DATE" ]; then
+  echo "Error: invalid date '$SESSION_DATE'. Use YYYY-MM-DD — e.g. $(date +%Y-%m-%d)" >&2
+  exit 1
+fi
+
+SESSION_DIR="${HOME}/.config/recapper/sessions"
+SESSION_FILE="${SESSION_DIR}/${SESSION_DATE}.json"
+mkdir -p "$SESSION_DIR"
+
+echo ""
+echo "Log an AI coding session for $SESSION_DATE"
+echo "-------------------------------------------"
+echo ""
+
+# Title
+read -r -p "Title (what was the main thing accomplished?): " TITLE
+if [ -z "$TITLE" ]; then
+  echo "Cancelled." >&2
+  exit 0
+fi
+
+# Description
+echo ""
+read -r -p "Description (1–3 sentences — what was done, what changed?): " DESCRIPTION
+
+# Type
+echo ""
+echo "Type:"
+echo "  1) feature        — new functionality"
+echo "  2) bugfix         — fixed a broken thing"
+echo "  3) refactor       — restructured without behavior change"
+echo "  4) investigation  — researched, debugged, explored"
+echo "  5) review         — reviewed code, design, or a PR"
+echo "  6) planning       — roadmap, scoping, design discussions"
+echo "  7) documentation  — wrote docs, READMEs, specs"
+echo "  8) configuration  — setup, tooling, env, infrastructure"
+echo "  9) learning       — read, experimented, understood something new"
+read -r -p "Enter number [1–9]: " TYPE_INPUT
+
+case "$TYPE_INPUT" in
+  1) TYPE="feature" ;;
+  2) TYPE="bugfix" ;;
+  3) TYPE="refactor" ;;
+  4) TYPE="investigation" ;;
+  5) TYPE="review" ;;
+  6) TYPE="planning" ;;
+  7) TYPE="documentation" ;;
+  8) TYPE="configuration" ;;
+  9) TYPE="learning" ;;
+  *) echo "Invalid selection." >&2; exit 1 ;;
+esac
+
+# Category
+echo ""
+echo "Category:"
+echo "  1) shipped      — completed, merged, done"
+echo "  2) in_progress  — started but not finished"
+echo "  3) collaborated — worked with others (reviews, discussions)"
+echo "  4) incident     — debugged or responded to a production issue"
+echo "  5) planned      — scoped or designed but not started"
+read -r -p "Enter number [1–5]: " CATEGORY_INPUT
+
+case "$CATEGORY_INPUT" in
+  1) CATEGORY="shipped" ;;
+  2) CATEGORY="in_progress" ;;
+  3) CATEGORY="collaborated" ;;
+  4) CATEGORY="incident" ;;
+  5) CATEGORY="planned" ;;
+  *) echo "Invalid selection." >&2; exit 1 ;;
+esac
+
+# Write
+LOGGED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+ENTRY_ID="session-${LOGGED_AT}-$(set +o pipefail; LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
+
+if [ -f "$SESSION_FILE" ]; then
+  FILE_TYPE=$(jq -r 'type' "$SESSION_FILE" 2>/dev/null || true)
+  if [ -n "$FILE_TYPE" ] && [ "$FILE_TYPE" != "array" ]; then
+    echo "⚠️  Warning: $SESSION_FILE exists but is not a JSON array. It will be replaced." >&2
+  fi
+fi
+
+EXISTING=$(jq 'if type == "array" then . else [] end' "$SESSION_FILE" 2>/dev/null || echo "[]")
+
+tmp="$(mktemp)"
+printf '%s\n' "$EXISTING" | jq \
+  --arg id "$ENTRY_ID" \
+  --arg title "$TITLE" \
+  --arg description "$DESCRIPTION" \
+  --arg type "$TYPE" \
+  --arg category "$CATEGORY" \
+  --arg logged_at "$LOGGED_AT" \
+  '. += [{id: $id, title: $title, description: $description, type: $type, category: $category, logged_at: $logged_at}]' \
+  > "$tmp" && mv "$tmp" "$SESSION_FILE"
+
+echo ""
+echo "✅ Session logged to $SESSION_FILE"
+if [ "$SESSION_DATE" = "$(date +%Y-%m-%d)" ]; then
+  echo "Run /recapper to include it in today's recap."
+else
+  echo "Run /recapper $SESSION_DATE to include it in that day's recap."
+fi

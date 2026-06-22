@@ -10,14 +10,21 @@ Log a summary of the current AI coding session to `~/.config/recapper/sessions/Y
 
 ## Usage
 
+**In Claude Code or any Claude Code IDE extension (VS Code, etc.):**
 ```
 /recap-session [date]
 ```
 
+**From any terminal (Cursor, other IDEs, or outside an agent session):**
+```
+recap-session [date]
+```
+Install the CLI: copy `bin/recap-session` from this repo to somewhere on your `$PATH` (e.g. `~/.local/bin/`).
+
 **Arguments:**
 - `date` (optional): Target date in `YYYY-MM-DD` format. Defaults to today. Use this to backfill a session you forgot to log the previous day.
 
-Run this at the end of any AI coding session — Cursor, Claude Code, VS Code, or any IDE where you've been working with an AI assistant. You can run it multiple times per day; each call appends a new entry.
+You can run either version multiple times per day; each call appends a new entry to the same file.
 
 ---
 
@@ -41,7 +48,19 @@ mkdir -p "$SESSION_DIR"
 
 ### Step 2: Summarize the session
 
-Review the current conversation and produce a structured summary. Ask the user to confirm or adjust before saving:
+This skill works in any IDE — Claude Code, Cursor, VS Code, or any other agent view. The source of the session description depends on what's available:
+
+**If the current conversation has context about what was worked on** (coding, debugging, investigation, etc. happened in this session): synthesize a structured summary from that context and present it as a draft.
+
+**If there is no conversation context** (this was invoked standalone, or the user is logging a session from a different tool that the agent doesn't have context for): ask:
+
+> "What did you work on this session? A brief description is enough — I'll format it for you.
+>
+> (e.g. 'Fixed the login auth bug and opened a PR' or 'Investigated the slow query in reporting, still digging')"
+
+[Wait for user input. Use their description to produce the structured summary below.]
+
+Either way, present the draft to the user and ask for confirmation before saving:
 
 > "Here's a summary of what we worked on this session:
 >

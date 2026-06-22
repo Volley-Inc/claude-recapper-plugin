@@ -120,130 +120,114 @@ If `FIRST_RUN` is true (set in step 1b), show the following before doing anythin
 > | **Datadog** | Dashboards, monitors, and notebooks you created or edited; incidents that were created or resolved |
 > | **Google Calendar** | Meetings you attended, classified by type (1:1, standup, team meeting, all-hands, interview, focus time) |
 >
-> For each source, reply with:
-> **yes** — include this source every run
-> **skip** — exclude this run, include automatically next run
-> **never** — never include this source"
+> For each source, reply with a number:
+> **1** — include this source every run
+> **2** — exclude this run, include automatically next run
+> **3** — never include this source"
 
-Prompt for each source **individually**, applying the choice immediately before moving to the next. This ensures choices are persisted even if onboarding is interrupted. **Prompt all six sources regardless of their current `ignoredSources` status** — this is the user's opportunity to change their mind from any prior partial run. Applying "yes" or "skip" immediately overrides step 1b's earlier unavailable marking for that source.
+Prompt for each source **individually**. **Prompt all six sources regardless of their current `ignoredSources` status** — this is the user's opportunity to change their mind from any prior partial run. Track all config changes in context — they will be written together in a single bash command at the end of onboarding. Do **not** write to `$RECAPPER_CONFIG` during these prompts. Answer **1** or **2** overrides step 1b's unavailable marking for that source (in-memory only — no bash required).
 
 **Slack:**
 
-> "**Slack** [yes/skip/never]:"
+> "**Slack** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **yes**: remove `"slack"` from `ignoredSources` if present; mark as available.
-- **skip**: mark as unavailable for this run only; remove `"slack"` from `ignoredSources` if present.
-- **never**: add `"slack"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"slack"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"slack"` for removal from `ignoredSources`.
+- **3**: track `"slack"` for addition to `ignoredSources`; mark as unavailable.]
 
-If **yes** or **skip**, immediately follow up with the DM preference (skip users will have Slack included on their next run and need this set):
+If **1** or **2**, immediately follow up with the DM preference (skip users will have Slack included on their next run and need this set):
 
 > "**Include Direct Messages?** Should DMs appear in your Slack recap?
-> **yes** — include DMs alongside channel messages
-> **no** — channel messages only (recommended for work recaps)
-> **ask** — prompt me each time I run /recapper"
+> 1) Yes — include DMs alongside channel messages
+> 2) No — channel messages only (recommended for work recaps)
+> 3) Ask me each time I run /recapper"
 
-[Wait for input. Save DM preference to config:]
+[Wait for input. Track the DM preference — do not write to config yet.]
 
-```bash
-# If yes to DMs:
-tmp="$(mktemp)" && jq '.slackIncludeDMs = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no to DMs:
-tmp="$(mktemp)" && jq '.slackIncludeDMs = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If ask each time:
-tmp="$(mktemp)" && jq '.slackIncludeDMs = "ask"' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
-
-Do **not** ask this for **never** — Slack will never be fetched.
+Do **not** ask this for **3** — Slack will never be fetched.
 
 **Linear:**
 
-> "**Linear** [yes/skip/never]:"
+> "**Linear** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **yes**: remove `"linear"` from `ignoredSources` if present; mark as available.
-- **skip**: mark as unavailable for this run only; remove `"linear"` from `ignoredSources` if present.
-- **never**: add `"linear"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"linear"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"linear"` for removal from `ignoredSources`.
+- **3**: track `"linear"` for addition to `ignoredSources`; mark as unavailable.]
 
 **GitHub:**
 
-> "**GitHub** [yes/skip/never]:"
+> "**GitHub** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **yes**: remove `"github"` from `ignoredSources` if present; mark as available.
-- **skip**: mark as unavailable for this run only; remove `"github"` from `ignoredSources` if present.
-- **never**: add `"github"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"github"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"github"` for removal from `ignoredSources`.
+- **3**: track `"github"` for addition to `ignoredSources`; mark as unavailable.]
 
 **Notion:**
 
-> "**Notion** [yes/skip/never]:"
+> "**Notion** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **yes**: remove `"notion"` from `ignoredSources` if present; mark as available.
-- **skip**: mark as unavailable for this run only; remove `"notion"` from `ignoredSources` if present.
-- **never**: add `"notion"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"notion"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"notion"` for removal from `ignoredSources`.
+- **3**: track `"notion"` for addition to `ignoredSources`; mark as unavailable.]
 
 **Datadog:**
 
-> "**Datadog** [yes/skip/never]:"
+> "**Datadog** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **yes**: remove `"datadog"` from `ignoredSources` if present; mark as available.
-- **skip**: mark as unavailable for this run only; remove `"datadog"` from `ignoredSources` if present.
-- **never**: add `"datadog"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"datadog"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"datadog"` for removal from `ignoredSources`.
+- **3**: track `"datadog"` for addition to `ignoredSources`; mark as unavailable.]
 
 **Google Calendar:**
 
-> "**Google Calendar** [yes/skip/never]:"
+> "**Google Calendar** [1/2/3]:"
 
-[Wait for input. Apply immediately:
-- **yes**: remove `"calendar"` from `ignoredSources` if present; mark as available.
-- **skip**: mark as unavailable for this run only; remove `"calendar"` from `ignoredSources` if present.
-- **never**: add `"calendar"` to `ignoredSources`; mark as unavailable.]
+[Wait for input. Track this choice — do not write to config yet:
+- **1**: track `"calendar"` for removal from `ignoredSources`; mark as available.
+- **2**: mark as unavailable for this run only; track `"calendar"` for removal from `ignoredSources`.
+- **3**: track `"calendar"` for addition to `ignoredSources`; mark as unavailable.]
 
-If **yes** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
+If **1** for Google Calendar and the Calendar MCP is available, call `mcp__claude_ai_Google_Calendar__list_calendars` and show:
 
 > "You have access to the following calendars:
 > [list each calendar with a number, e.g. "1. Work (primary)", "2. Team Meetings", "3. Personal"]
 >
 > Which would you like to include in your recaps? Enter the numbers separated by commas (or press Enter to use your primary calendar only):"
 
-[Wait for input. Parse the numbers and save the selected calendar IDs to config:]
+[Wait for input. Parse the numbers and track the selected calendar IDs — do not write to config yet.]
 
-```bash
-tmp="$(mktemp)" && jq --argjson ids '["cal-id-1","cal-id-2"]' '.calendarIds = $ids' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
-
-If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
+If the user presses Enter without selecting, track only the primary calendar ID. If the MCP is unavailable, skip calendar selection and track only the primary calendar ID.
 
 **Session Log Reminder** (only if `sessionReminder` is `null` — skip if it's already set from a prior interrupted run):
 
 > "Would you like a reminder to log your AI coding sessions before each recap? Running `/recap-session` at the end of a Cursor, VS Code, or Claude Code session captures work done in those tools so it shows up in your daily recap.
-> **yes** — remind me if no sessions are logged when I run /recapper
-> **no** — I'll manage this myself"
+> 1) Yes — remind me if no sessions are logged when I run /recapper
+> 2) No — I'll manage this myself"
 
-[Wait for input. Save preference to config:]
+[Wait for input. Track the session reminder preference — do not write to config yet.]
 
-```bash
-# If yes:
-tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no:
-tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
-
-To add/remove a source from `ignoredSources` (for reference above):
-```bash
-# Add:
-tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources += [$src] | .ignoredSources |= unique' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# Remove:
-tmp="$(mktemp)" && jq --arg src "slug" '.ignoredSources -= [$src]' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-```
-
-After all six sources are answered **and the Session Log Reminder preference is saved**, mark onboarding as complete so a future interrupted run doesn't re-trigger it:
+After all six sources are answered **and the Session Log Reminder preference is noted**, write all onboarding choices to config in **one consolidated bash command** — this is the only config write during onboarding. Substitute the actual values from the answers collected above:
 
 ```bash
-tmp="$(mktemp)" && jq '.onboardingComplete = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
+tmp="$(mktemp)" && jq \
+  --argjson ignoredSources '[]' \
+  --arg slackIncludeDMs "true" \
+  --argjson calendarIds '[]' \
+  --argjson sessionReminder 'true' \
+  '.ignoredSources = $ignoredSources | .slackIncludeDMs = (if $slackIncludeDMs == "true" then true elif $slackIncludeDMs == "false" then false else $slackIncludeDMs end) | .calendarIds = $calendarIds | .sessionReminder = $sessionReminder | .onboardingComplete = true' \
+  "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
+
+Substitute these values:
+- `$ignoredSources` — JSON array of source slugs that received answer **3** (e.g., `'["datadog","calendar"]'`). Sources with answers **1** or **2** are excluded from this list.
+- `$slackIncludeDMs` — the DM preference as a string: `"true"`, `"false"`, or `"ask"`. If Slack was answered **3**, read the existing value: `jq -r '.slackIncludeDMs // "true" | tostring' "$RECAPPER_CONFIG"`.
+- `$calendarIds` — JSON array of selected calendar IDs (e.g., `'["primary","cal123@group.calendar.google.com"]'`). If Calendar was answered **2** or **3**, preserve the existing value: run `jq '.calendarIds // []' "$RECAPPER_CONFIG"` and use that array.
+- `$sessionReminder` — `true` or `false` (JSON boolean, no quotes). If the Session Log Reminder prompt was skipped because `sessionReminder` was already set, read the existing value: `jq '.sessionReminder' "$RECAPPER_CONFIG"`.
 
 Then continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
@@ -279,13 +263,13 @@ If the command fails or reports "not logged in", show:
 > "⚠️ GitHub CLI isn't authenticated — GitHub activity won't be included.
 >
 > What would you like to do?
-> **a) Ignore forever** — don't remind me about GitHub again
-> **b) Ignore this time** — skip GitHub now, remind me next run
-> **c) Fix it** — I'll walk you through logging in"
+> 1) Ignore forever — don't remind me about GitHub again
+> 2) Ignore this time — skip GitHub now, remind me next run
+> 3) Fix it — I'll walk you through logging in"
 
-If **a)**: add `"github"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)**: mark as `unavailable`, continue.
-If **c)**: tell the user:
+If **1**: add `"github"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **2**: mark as `unavailable`, continue.
+If **3**: tell the user:
 > "Run this in your terminal and follow the prompts, then re-run `/recapper` to include GitHub:
 > ```
 > gh auth login
@@ -305,13 +289,13 @@ If any of the three are missing, show:
 > "⚠️ Datadog isn't configured — dashboards, monitors, and incidents won't be included.
 >
 > What would you like to do?
-> **a) Ignore forever** — don't remind me about Datadog again
-> **b) Ignore this time** — skip Datadog now, remind me next run
-> **c) Fix it** — I'll walk you through getting your API keys"
+> 1) Ignore forever — don't remind me about Datadog again
+> 2) Ignore this time — skip Datadog now, remind me next run
+> 3) Fix it — I'll walk you through getting your API keys"
 
-If **a)**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue — do NOT proceed to the key prompts below.
-If **b)**: mark as `unavailable`, continue — do NOT proceed to the key prompts below.
-If **c)**: only prompt for keys that are actually missing — skip any step whose key is already set in the environment. Set `DATADOG_KEYS_JUST_COLLECTED=true` only after a key is successfully entered (not at the start of this flow):
+If **1**: add `"datadog"` to `ignoredSources` in config, mark as `unavailable`, continue — do NOT proceed to the key prompts below.
+If **2**: mark as `unavailable`, continue — do NOT proceed to the key prompts below.
+If **3**: only prompt for keys that are actually missing — skip any step whose key is already set in the environment. Set `DATADOG_KEYS_JUST_COLLECTED=true` only after a key is successfully entered (not at the start of this flow):
 
 If `DATADOG_API_KEY` is not set:
 
@@ -367,10 +351,10 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
   - If `DATADOG_KEYS_JUST_COLLECTED` is true (any key was entered in this session): tell the user "✅ Datadog keys verified!" and offer to save:
 
     > "Save these to your shell profile so you don't have to enter them again?
-    > - **Yes** — I'll append them to your shell profile
-    > - **No** — use for this session only"
+    > 1) Yes — append to shell profile
+    > 2) No — use for this session only"
 
-    If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
+    If **1**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 
     ```bash
     printf '\n# Datadog (added by recapper)\n' >> "$SHELL_PROFILE"
@@ -384,7 +368,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
     Also export the values for the current session so Phase 2 can use them immediately without restarting.
 
-    If **No**, export the values for the current session so Phase 2 can use them.
+    If **2**, export the values for the current session so Phase 2 can use them.
   - If `DATADOG_KEYS_JUST_COLLECTED` is false (all keys were pre-existing): continue silently — no save prompt needed.
 
 - If `$HTTP_STATUS` is `000` (curl failed): tell the user:
@@ -418,15 +402,15 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 If `sessionReminder` is `null` (not yet set — existing install that predates this feature), prompt once and save the answer now, then apply it for this run:
 
 > "Would you like a reminder to log your AI coding sessions before each recap? Run `/recap-session` at the end of a Cursor, VS Code, or Claude Code session to capture that work.
-> **yes** — remind me if no sessions are logged when I run /recapper
-> **no** — I'll manage this myself"
+> 1) Yes — remind me if no sessions are logged when I run /recapper
+> 2) No — I'll manage this myself"
 
 [Wait for input. Save preference to config:]
 
 ```bash
-# If yes:
+# If 1:
 tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no:
+# If 2:
 tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
@@ -439,11 +423,13 @@ SESSION_COUNT=$(jq 'if type == "array" then length else 0 end' "$SESSION_FILE" 2
 
 If `SESSION_COUNT` is `0` (file missing or empty), show:
 
-> "💡 No session logs found for **{TARGET_DATE}**. If you've been working in Cursor, VS Code, or another AI coding tool, run `/recap-session{date_arg}` to capture that work before your recap. Continue anyway? (yes / wait)"
+> "💡 No session logs found for **{TARGET_DATE}**. If you've been working in Cursor, VS Code, or another AI coding tool, run `/recap-session{date_arg}` to capture that work before your recap.
+> 1) Continue anyway
+> 2) Wait — I'll run /recap-session first"
 
 Where `{date_arg}` is ` {TARGET_DATE}` if it differs from today, or empty if it is today.
 
-[Wait for input. If **wait**: stop here so the user can run `/recap-session` first. If **yes** or empty: continue.]
+[Wait for input. If **2**: stop here so the user can run `/recap-session` first. If **1** or empty: continue.]
 
 If `SESSION_COUNT` is greater than `0`, or `sessionReminder` is `false`: skip this step silently. (The `null` case is handled above and will not reach this point.)
 
@@ -481,10 +467,10 @@ SLACK_INCLUDE_DMS=$(jq -r 'if .slackIncludeDMs == false then "false" elif .slack
 If `SLACK_INCLUDE_DMS` is `"ask"`, prompt the user now:
 
 > "**Include Direct Messages in today's recap?**
-> **yes** — include DMs alongside channel messages
-> **no** — channel messages only"
+> 1) Yes — include DMs alongside channel messages
+> 2) No — channel messages only"
 
-[Wait for input. Resolve `SLACK_INCLUDE_DMS` to `"true"` or `"false"` based on the answer — do not save to config. All subsequent steps use this resolved value.]
+[Wait for input. Resolve `SLACK_INCLUDE_DMS` to `"true"` if **1**, `"false"` if **2** — do not save to config. All subsequent steps use this resolved value.]
 
 **Preferred: MCP**
 - If `SLACK_INCLUDE_DMS` is `"true"`: use `mcp__claude_ai_Slack__slack_search_public_and_private`
@@ -517,25 +503,24 @@ curl -s "https://slack.com/api/search.messages" \
 > "⚠️ Slack MCP isn't available and the REST fallback failed (missing or invalid credentials) — Slack messages won't be included.
 >
 > What would you like to do?
-> **a) Ignore forever** — don't remind me about Slack again
-> **b) Ignore this time** — skip Slack now, remind me next run
-> **c) Fix it** — walk me through setting up Slack"
+> 1) Ignore forever — don't remind me about Slack again
+> 2) Ignore this time — skip Slack now, remind me next run
+> 3) Fix it — walk me through setting up Slack"
 
-If **a)**: add `"slack"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)**: mark as `unavailable`, continue.
-If **c)**: ask the user to choose:
+If **1**: add `"slack"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **2**: mark as `unavailable`, continue.
+If **3**: ask the user to choose:
 
 > "You can fix this two ways:
 >
-> **A — Authenticate the Slack MCP** (recommended): Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
+> 1) Authenticate the Slack MCP (recommended) — Open Claude Code settings and authenticate the Slack integration, then re-run `/recapper`.
+> 2) Set up the REST fallback — I'll collect your Slack credentials now.
 >
-> **B — Set up the REST fallback**: I'll collect your Slack credentials now.
->
-> Choose A or B (or press Enter to skip Slack):"
+> Enter 1 or 2 (or press Enter to skip Slack):"
 
-[Wait for input. If empty: mark Slack as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap will run without Slack; user can re-run after authenticating. If **B**: proceed below.]
+[Wait for input. If empty: mark Slack as `unavailable` and continue. If **1**: mark as `unavailable` and continue — the rest of this recap will run without Slack; user can re-run after authenticating. If **2**: proceed below.]
 
-If user chose **B**, re-collect both values — since REST already failed, any existing values may be invalid:
+If user chose **2**, re-collect both values — since REST already failed, any existing values may be invalid:
 
 > "Your Slack User ID (open your profile → **•••** → **Copy member ID**, looks like `U012AB3CD`):
 > Paste here (or press Enter to skip Slack):"
@@ -552,10 +537,10 @@ If user chose **B**, re-collect both values — since REST already failed, any e
 If both SLACK_USER_ID and SLACK_BOT_TOKEN are now set **and `SLACK_CREDS_JUST_COLLECTED` is true** (at least one was entered this session), offer to save:
 
 > "Save these to your shell profile so you don't have to enter them again?
-> - **Yes** — I'll append them to your shell profile
-> - **No** — use for this session only"
+> 1) Yes — append to shell profile
+> 2) No — use for this session only"
 
-If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
+If **1**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 
 ```bash
 printf '\n# Slack (added by recapper)\n' >> "$SHELL_PROFILE"
@@ -568,7 +553,7 @@ Then tell the user:
 
 Also export the values for the current session so Phase 2 can use them immediately.
 
-If **No**, export the values for the current session so Phase 2 can use them.
+If **2**, export the values for the current session so Phase 2 can use them.
 
 Mark Slack as available with the provided credentials, then proceed to fetch using the REST API fallback above.
 
@@ -616,23 +601,22 @@ curl -s -X POST https://api.linear.app/graphql \
 > "⚠️ Linear MCP isn't available and the GraphQL fallback failed (missing or invalid `LINEAR_API_KEY`) — Linear issues won't be included.
 >
 > What would you like to do?
-> **a) Ignore forever** — don't remind me about Linear again
-> **b) Ignore this time** — skip Linear now, remind me next run
-> **c) Fix it** — walk me through setting up Linear"
+> 1) Ignore forever — don't remind me about Linear again
+> 2) Ignore this time — skip Linear now, remind me next run
+> 3) Fix it — walk me through setting up Linear"
 
-If **a)**: add `"linear"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)**: mark as `unavailable`, continue.
-If **c)**: ask the user to choose:
+If **1**: add `"linear"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **2**: mark as `unavailable`, continue.
+If **3**: ask the user to choose:
 
 > "You can fix this two ways:
 >
-> **A — Authenticate the Linear MCP** (recommended): Open Claude Code settings and authenticate the Linear integration, then re-run `/recapper`.
+> 1) Authenticate the Linear MCP (recommended) — Open Claude Code settings and authenticate the Linear integration, then re-run `/recapper`.
+> 2) Set up the REST fallback — I'll collect your API key now.
 >
-> **B — Set up the REST fallback**: I'll collect your API key now.
->
-> Choose A or B (or press Enter to skip Linear):"
+> Enter 1 or 2 (or press Enter to skip Linear):"
 
-[Wait for input. If empty: mark Linear as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap runs without Linear; user can re-run after authenticating. If **B**: proceed below.]
+[Wait for input. If empty: mark Linear as `unavailable` and continue. If **1**: mark as `unavailable` and continue — the rest of this recap runs without Linear; user can re-run after authenticating. If **2**: proceed below.]
 
 > "Open Linear → **Settings → API → Personal API keys** → Create key → copy value.
 >
@@ -643,10 +627,10 @@ If **c)**: ask the user to choose:
 If provided, offer to save to shell profile:
 
 > "Save this to your shell profile so you don't have to enter it again?
-> - **Yes** — I'll append it to your shell profile
-> - **No** — use for this session only"
+> 1) Yes — append to shell profile
+> 2) No — use for this session only"
 
-If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
+If **1**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 ```bash
 printf '\n# Linear (added by recapper)\n' >> "$SHELL_PROFILE"
 printf "export LINEAR_API_KEY='%s'\n" "$(escape_sq "$LINEAR_API_KEY")" >> "$SHELL_PROFILE"
@@ -657,7 +641,7 @@ Then tell the user:
 
 Also export the value for the current session so Phase 2 can use it immediately.
 
-If **No**, export for the current session only.
+If **2**, export for the current session only.
 
 Mark Linear as available with the provided key, then proceed to fetch using the GraphQL fallback above.
 
@@ -741,23 +725,22 @@ curl -s -X POST https://api.notion.com/v1/search \
 > "⚠️ Notion MCP isn't available and the REST fallback failed (missing or invalid `NOTION_TOKEN`) — Notion pages won't be included.
 >
 > What would you like to do?
-> **a) Ignore forever** — don't remind me about Notion again
-> **b) Ignore this time** — skip Notion now, remind me next run
-> **c) Fix it** — walk me through setting up Notion"
+> 1) Ignore forever — don't remind me about Notion again
+> 2) Ignore this time — skip Notion now, remind me next run
+> 3) Fix it — walk me through setting up Notion"
 
-If **a)**: add `"notion"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)**: mark as `unavailable`, continue.
-If **c)**: ask the user to choose:
+If **1**: add `"notion"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **2**: mark as `unavailable`, continue.
+If **3**: ask the user to choose:
 
 > "You can fix this two ways:
 >
-> **A — Authenticate the Notion MCP** (recommended): Open Claude Code settings and authenticate the Notion integration, then re-run `/recapper`.
+> 1) Authenticate the Notion MCP (recommended) — Open Claude Code settings and authenticate the Notion integration, then re-run `/recapper`.
+> 2) Set up the REST fallback — I'll collect your token now.
 >
-> **B — Set up the REST fallback**: I'll collect your token now.
->
-> Choose A or B (or press Enter to skip Notion):"
+> Enter 1 or 2 (or press Enter to skip Notion):"
 
-[Wait for input. If empty: mark Notion as `unavailable` and continue. If **A**: mark as `unavailable` and continue — the rest of this recap runs without Notion; user can re-run after authenticating. If **B**: proceed below.]
+[Wait for input. If empty: mark Notion as `unavailable` and continue. If **1**: mark as `unavailable` and continue — the rest of this recap runs without Notion; user can re-run after authenticating. If **2**: proceed below.]
 
 > "Go to [notion.so/my-integrations](https://www.notion.so/my-integrations) → New integration → copy the Internal Integration Token (starts with `secret_`).
 >
@@ -768,10 +751,10 @@ If **c)**: ask the user to choose:
 If provided, offer to save to shell profile:
 
 > "Save this to your shell profile so you don't have to enter it again?
-> - **Yes** — I'll append it to your shell profile
-> - **No** — use for this session only"
+> 1) Yes — append to shell profile
+> 2) No — use for this session only"
 
-If **Yes**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
+If **1**, append to the shell profile (using `$SHELL_PROFILE` and `escape_sq` defined in 1d):
 ```bash
 printf '\n# Notion (added by recapper)\n' >> "$SHELL_PROFILE"
 printf "export NOTION_TOKEN='%s'\n" "$(escape_sq "$NOTION_TOKEN")" >> "$SHELL_PROFILE"
@@ -782,7 +765,7 @@ Then tell the user:
 
 Also export the value for the current session so Phase 2 can use it immediately.
 
-If **No**, export for the current session only.
+If **2**, export for the current session only.
 
 Mark Notion as available with the provided token, then proceed to fetch using the REST API fallback above.
 
@@ -859,13 +842,13 @@ If `CALENDAR_IDS` is empty, fetch from the primary calendar only. Otherwise, fet
 > "⚠️ Google Calendar MCP isn't authenticated — calendar events won't be included.
 >
 > What would you like to do?
-> **a) Ignore forever** — don't remind me about Google Calendar again
-> **b) Ignore this time** — skip Calendar now, remind me next run
-> **c) Fix it** — open Claude Code settings and authenticate the Google Calendar integration, then re-run `/recapper`"
+> 1) Ignore forever — don't remind me about Google Calendar again
+> 2) Ignore this time — skip Calendar now, remind me next run
+> 3) Fix it — open Claude Code settings and authenticate the Google Calendar integration, then re-run `/recapper`"
 
-If **a)**: add `"calendar"` to `ignoredSources` in config, mark as `unavailable`, continue.
-If **b)**: mark as `unavailable` and continue.
-If **c)**: tell the user to authenticate the Google Calendar integration in Claude Code settings, then re-run `/recapper` to include Calendar. Mark as `unavailable` and continue — the rest of this recap will run without Calendar.
+If **1**: add `"calendar"` to `ignoredSources` in config, mark as `unavailable`, continue.
+If **2**: mark as `unavailable` and continue.
+If **3**: tell the user to authenticate the Google Calendar integration in Claude Code settings, then re-run `/recapper` to include Calendar. Mark as `unavailable` and continue — the rest of this recap will run without Calendar.
 
 **Classify each event:**
 
@@ -1028,11 +1011,13 @@ Print the full JSON in a fenced code block. See [references/output-templates.md]
 
 After both the summary and JSON have been written successfully, if `SESSIONS_FOUND=true` (set in Phase 2g when entries were actually parsed), offer to delete it:
 
-> "Session log used. Delete `~/.config/recapper/sessions/{TARGET_DATE}.json` to keep things tidy? (yes / no)"
+> "Session log used. Delete `~/.config/recapper/sessions/{TARGET_DATE}.json` to keep things tidy?
+> 1) Yes — delete it
+> 2) No — keep it"
 
 [Wait for input.]
 
-If **yes**:
+If **1**:
 ```bash
 rm -f "${HOME}/.config/recapper/sessions/${TARGET_DATE}.json"
 ```
