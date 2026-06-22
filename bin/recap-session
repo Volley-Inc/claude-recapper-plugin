@@ -85,7 +85,7 @@ esac
 
 # Write
 LOGGED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-ENTRY_ID="session-${LOGGED_AT}-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
+ENTRY_ID="session-${LOGGED_AT}-$(set +o pipefail; LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)"
 
 if [ -f "$SESSION_FILE" ]; then
   FILE_TYPE=$(jq -r 'type' "$SESSION_FILE" 2>/dev/null || true)

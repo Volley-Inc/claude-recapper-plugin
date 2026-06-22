@@ -201,7 +201,7 @@ If **1** for Google Calendar and the Calendar MCP is available, call `mcp__claud
 
 [Wait for input. Parse the numbers and track the selected calendar IDs — do not write to config yet.]
 
-If the user presses Enter without selecting, save only the primary calendar ID. If the MCP is unavailable, skip calendar selection and default to primary.
+If the user presses Enter without selecting, track only the primary calendar ID. If the MCP is unavailable, skip calendar selection and track only the primary calendar ID.
 
 **Session Log Reminder** (only if `sessionReminder` is `null` — skip if it's already set from a prior interrupted run):
 
@@ -226,8 +226,8 @@ tmp="$(mktemp)" && jq \
 Substitute these values:
 - `$ignoredSources` — JSON array of source slugs that received answer **3** (e.g., `'["datadog","calendar"]'`). Sources with answers **1** or **2** are excluded from this list.
 - `$slackIncludeDMs` — the DM preference as a string: `"true"`, `"false"`, or `"ask"`. If Slack was answered **3**, read the existing value: `jq -r '.slackIncludeDMs // "true" | tostring' "$RECAPPER_CONFIG"`.
-- `$calendarIds` — JSON array of selected calendar IDs (e.g., `'["primary","cal123@group.calendar.google.com"]'`). Use `'[]'` if Calendar was not answered **1**.
-- `$sessionReminder` — `true` or `false` (JSON boolean, no quotes).
+- `$calendarIds` — JSON array of selected calendar IDs (e.g., `'["primary","cal123@group.calendar.google.com"]'`). If Calendar was answered **2** or **3**, preserve the existing value: run `jq '.calendarIds // []' "$RECAPPER_CONFIG"` and use that array.
+- `$sessionReminder` — `true` or `false` (JSON boolean, no quotes). If the Session Log Reminder prompt was skipped because `sessionReminder` was already set, read the existing value: `jq '.sessionReminder' "$RECAPPER_CONFIG"`.
 
 Then continue to step 1d. The credential check steps (1e, 1f, and the Calendar check in Phase 2) must skip any source already marked `unavailable` here — do not prompt again for the same source.
 
@@ -408,9 +408,9 @@ If `sessionReminder` is `null` (not yet set — existing install that predates t
 [Wait for input. Save preference to config:]
 
 ```bash
-# If yes:
+# If 1:
 tmp="$(mktemp)" && jq '.sessionReminder = true' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
-# If no:
+# If 2:
 tmp="$(mktemp)" && jq '.sessionReminder = false' "$RECAPPER_CONFIG" > "$tmp" && mv "$tmp" "$RECAPPER_CONFIG"
 ```
 
