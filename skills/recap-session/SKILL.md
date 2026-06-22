@@ -10,14 +10,21 @@ Log a summary of the current AI coding session to `~/.config/recapper/sessions/Y
 
 ## Usage
 
+**In Claude Code or any Claude Code IDE extension (VS Code, etc.):**
 ```
 /recap-session [date]
 ```
 
+**From any terminal (Cursor, other IDEs, or outside an agent session):**
+```
+recap-session [date]
+```
+Install the CLI: copy `bin/recap-session` from this repo to somewhere on your `$PATH` (e.g. `~/.local/bin/`).
+
 **Arguments:**
 - `date` (optional): Target date in `YYYY-MM-DD` format. Defaults to today. Use this to backfill a session you forgot to log the previous day.
 
-Run this at the end of any AI coding session — Cursor, Claude Code, VS Code, or any IDE where you've been working with an AI assistant. You can run it multiple times per day; each call appends a new entry.
+You can run either version multiple times per day; each call appends a new entry to the same file.
 
 ---
 
