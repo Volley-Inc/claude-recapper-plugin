@@ -398,7 +398,7 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
 
   > "Paste corrected App key (or press Enter to skip Datadog):"
 
-  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and re-run the HTTP status check above.]
+  [Wait for user input. If empty, mark Datadog as `unavailable` and continue. If provided, set `DATADOG_APP_KEY` to the entered value, export it for the current session, and re-run the HTTP status check above. If the re-check returns `000` again, tell the user "⚠️ Still can't reach Datadog — skipping for now. Re-run `/recapper` once your connection is restored.", mark Datadog as `unavailable`, and continue — do NOT loop again.]
 
 - If `$HTTP_STATUS` is anything else (401, 400, etc.): tell the user:
   > "⚠️ Datadog keys don't seem valid (HTTP $HTTP_STATUS)."
